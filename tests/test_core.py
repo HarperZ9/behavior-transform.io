@@ -1,3 +1,6 @@
+# CALIBRATED VIEW
+# audit_counts: {}
+#
 import os
 import sys
 from pathlib import Path
@@ -69,3 +72,15 @@ def test_score_zero_for_clean_text():
 def test_resolve_mode_returns_on_or_off():
     mode = _core.resolve_mode()
     assert mode in ("on", "off")
+
+
+def test_score_positive_for_tier1_hit():
+    _core._ENGINE = None
+    engine = _core.build_engine()
+    from vocabulary_map import by_severity
+    t1 = by_severity("tier1")
+    if not t1:
+        pytest.skip("no tier1 calibrations defined")
+    term = t1[0].original
+    score = engine.score(term)
+    assert score > 0.0
