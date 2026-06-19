@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Apply the vocabulary calibration to source files in-place.
 
 For each Calibration:
@@ -102,16 +102,7 @@ def _process_text(text: str, compiled: list) -> tuple[str, int]:
 
 
 def _default_paths() -> list[Path]:
-    agents = ROOT.parent.parent
-    candidates = (
-        "warden_shell", "warden_engraver", "warden_rae",
-        "warden_pso", "warden_observatory", "warden_selfsustain",
-        "warden_credops", "warden_probes", "warden_glasswing",
-        # Engineering docs + proposals + plans — added 2026-04-26.
-        # Canonical signed text is whitelisted in vocabulary_map.LINTER_WHITELIST.
-        "project-docs",
-    )
-    return [agents / d for d in candidates if (agents / d).exists()]
+    return [Path.cwd()]
 
 
 def main(argv: list[str]) -> int:
@@ -157,3 +148,4 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
+
