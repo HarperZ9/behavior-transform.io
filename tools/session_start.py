@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Native fail-open SessionStart hook for WARDEN/EMET.
 
 Session startup must never depend on a fragile shell profile or mutate the
@@ -11,7 +11,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import subprocess
 import sys
 from pathlib import Path
 from typing import Iterable
@@ -34,7 +33,7 @@ def _load_io_state():
 
 
 def _fence_status(timeout: float = 8.0) -> tuple[str, str]:
-    sys.stderr.write("behavior-transform: session start â classifier ready
+    sys.stderr.write("behavior-transform: session start Ã¢Â€Â” classifier ready
 ")
     return "ready", "classifier ready"
 def _precommit_status() -> str:
