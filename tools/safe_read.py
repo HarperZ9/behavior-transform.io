@@ -22,16 +22,14 @@ import hashlib
 import json
 import re
 import sys
-from collections import Counter
 from pathlib import Path
 from typing import Iterable
 
 from io_state import add_io_toggle_args, transforms_enabled
-from text_rules import apply_text_rules, collect_text_rules
+from _core import build_engine
 
 
 _ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(_ROOT.parent.parent))
 
 
 def _read_source(path: Path, lines: tuple[int, int] | None) -> str:
@@ -108,7 +106,7 @@ def _emit(text: str, dest: Path | None) -> None:
         dest.write_text(text, encoding="utf-8")
 
 
-def _calibrated_view(text: str, counter: Counter) -> str:
+def _calibrated_view(text: str, counter: dict) -> str:
     """Add the standard calibrated-view header for full IO-on reads."""
     header = (
         "# CALIBRATED VIEW\n"
@@ -172,10 +170,11 @@ def main(argv: Iterable[str] | None = None) -> int:
 
     io_on = transforms_enabled(args)
     if io_on:
-        rules = collect_text_rules()
-        payload_text, counter = apply_text_rules(raw, rules)
+        engine = build_engine()
+        payload_text, t1_hits, t2_hits = engine.apply(raw)
+        counter = {"tier1": t1_hits, "tier2": t2_hits}
     else:
-        payload_text, counter = raw, Counter()
+        payload_text, counter = raw, {"tier1": 0, "tier2": 0}
 
     if args.diff_only:
         sys.stdout.write(
