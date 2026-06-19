@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -48,18 +48,14 @@ def test_no_warden_in_safe_fetch_hook():
 def test_no_warden_in_safe_exec_hook():
     assert "warden_shell" not in _src("hooks/safe-exec-redirect.py")
 
-def test_no_warden_in_safe_read_hook():
-    src = _src("hooks/safe-read-redirect.py")
-    # warden_shell in IN_SCOPE_COMPONENTS (string data) is acceptable
-    # but _tools_path() must not contain it as a path fallback
-    assert "AGENTS" not in src
-    assert "Path.home()" not in src  # no home-dir anchor
 
 def test_no_warden_in_safe_read_hook():
     src = _src("hooks/safe-read-redirect.py")
-    # warden_shell in IN_SCOPE_COMPONENTS (string data) is acceptable
-    # but _tools_path() must not contain it as a path fallback
+    # warden_shell / AGENTS appearing in IN_SCOPE_COMPONENTS (string data) is
+    # acceptable; the real guard is that _tools_path() must not anchor on a
+    # home-dir fallback.
     assert "Path.home()" not in src  # no home-dir anchor
+
 
 def test_session_start_decoupled_from_warden():
     src = _src("tools/session_start.py")
