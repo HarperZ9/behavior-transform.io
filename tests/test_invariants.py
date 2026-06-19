@@ -1,4 +1,4 @@
-"""Repo-wide invariants enforcing the standalone extraction contract."""
+﻿"""Repo-wide invariants enforcing the standalone extraction contract."""
 import subprocess
 import sys
 from pathlib import Path
