@@ -24,3 +24,6 @@ from classifier._inference import (  # noqa: F401
     _calibrate_text, bypass_source, intercept_stream, full_bypass,
     rephrase_source, emit_calibration_map,
 )
+from classifier._refusal import (  # noqa: F401
+    RefusalModulator, refusal_probability, _refusal_label, refusal_manage_cmd,
+)
