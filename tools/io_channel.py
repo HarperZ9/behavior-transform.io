@@ -65,74 +65,36 @@ from typing import IO, Iterable
 from io_state import add_io_toggle_args, env_mode, set_env_mode, split_io_toggles
 
 _TOOLS_ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(_TOOLS_ROOT.parent.parent))
-_REPO_ROOT = _TOOLS_ROOT.parent.parent
-_PREFIRE_GATE = _REPO_ROOT / "engineering" / "universal_prefire_gate.py"
-_PREFIRE_MANIFEST = _REPO_ROOT / "project-docs" / "universal-prefire-manifest.json"
-
-
-def _run_universal_prefire(surface: str) -> int:
-    if os.environ.get("WARDEN_PREFIRE_ACTIVE") == "1":
-        return 0
-    if not _PREFIRE_GATE.is_file():
-        sys.stderr.write(f"io_channel: universal prefire gate missing: {_PREFIRE_GATE}\n")
-        return 2
-    if not _PREFIRE_MANIFEST.is_file():
-        sys.stderr.write(f"io_channel: universal prefire manifest missing: {_PREFIRE_MANIFEST}\n")
-        return 2
-
-    env = os.environ.copy()
-    env["WARDEN_PREFIRE_ACTIVE"] = "1"
-    try:
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(_PREFIRE_GATE),
-                str(_PREFIRE_MANIFEST),
-                "--repo-root",
-                str(_REPO_ROOT),
-                "--launch-surface",
-                surface,
-                "--quiet",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=15,
-            env=env,
-            cwd=str(_REPO_ROOT),
-        )
-    except (OSError, subprocess.SubprocessError) as exc:
-        sys.stderr.write(f"io_channel: universal prefire gate failed to run: {exc}\n")
-        return 2
-    if result.returncode != 0:
-        detail = (result.stderr or result.stdout or "").strip()
-        if detail:
-            sys.stderr.write(detail[:1000] + "\n")
-        sys.stderr.write("io_channel: universal prefire gate failed\n")
-    return result.returncode
 
 
 # --- Calibration -------------------------------------------------------------
 
 def _load_vocab_map() -> dict:
-    candidates = [
-        _TOOLS_ROOT / "vocabulary_map.py",
-        _TOOLS_ROOT.parent / "warden_shell" / "tools" / "vocabulary_map.py",
-    ]
     import importlib.util
-    for p in candidates:
-        if not p.is_file():
-            continue
+    bt = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
+    if bt:
+        p = Path(bt) / "vocabulary_map.py"
+        if p.is_file():
+            spec = importlib.util.spec_from_file_location("_vm_iochan", p)
+            if spec is not None and spec.loader is not None:
+                mod = importlib.util.module_from_spec(spec)
+                sys.modules["_vm_iochan"] = mod
+                try:
+                    spec.loader.exec_module(mod)
+                    return mod.__dict__
+                except Exception:
+                    sys.modules.pop("_vm_iochan", None)
+    p = Path(__file__).resolve().parent / "vocabulary_map.py"
+    if p.is_file():
         spec = importlib.util.spec_from_file_location("_vm_iochan", p)
-        if spec is None or spec.loader is None:
-            continue
-        mod = importlib.util.module_from_spec(spec)
-        sys.modules["_vm_iochan"] = mod
-        try:
-            spec.loader.exec_module(mod)
-            return mod.__dict__
-        except Exception:
-            sys.modules.pop("_vm_iochan", None)
+        if spec is not None and spec.loader is not None:
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules["_vm_iochan"] = mod
+            try:
+                spec.loader.exec_module(mod)
+                return mod.__dict__
+            except Exception:
+                sys.modules.pop("_vm_iochan", None)
     return {}
 
 
@@ -379,9 +341,6 @@ def main(argv=None) -> int:
         cmd = cmd[1:]
     if not cmd:
         parser.error("no command given -- usage: io_channel.py [opts] -- CMD [ARG ...]")
-    prefire_rc = _run_universal_prefire("generic_cli")
-    if prefire_rc != 0:
-        return prefire_rc
 
     explicit_mode = args.io_channel or cmd_mode
     if explicit_mode is not None:

@@ -51,33 +51,39 @@ from io_state import add_io_toggle_args, transforms_enabled
 
 
 _ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(_ROOT.parent.parent))
 
 
 def _load_vocab_map() -> dict:
     """Import vocabulary_map by file path so layout differences don't matter."""
-    candidates = [
-        _ROOT / "vocabulary_map.py",
-        _ROOT.parent / "warden_shell" / "tools" / "vocabulary_map.py",
-    ]
     import importlib.util
-    for p in candidates:
-        if not p.is_file():
-            continue
+    import os as _os
+    bt = _os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
+    if bt:
+        p = Path(bt) / "vocabulary_map.py"
+        if p.is_file():
+            spec = importlib.util.spec_from_file_location("vocabulary_map_canonical", p)
+            if spec is not None and spec.loader is not None:
+                mod = importlib.util.module_from_spec(spec)
+                sys.modules["vocabulary_map_canonical"] = mod
+                try:
+                    spec.loader.exec_module(mod)
+                    return mod.__dict__
+                except Exception:
+                    sys.modules.pop("vocabulary_map_canonical", None)
+    p = Path(__file__).resolve().parent / "vocabulary_map.py"
+    if p.is_file():
         spec = importlib.util.spec_from_file_location("vocabulary_map_canonical", p)
-        if spec is None or spec.loader is None:
-            continue
-        mod = importlib.util.module_from_spec(spec)
-        # Register in sys.modules BEFORE exec_module — required so
-        # @dataclass(frozen=True) inside the loaded module can resolve
-        # cls.__module__ during class processing.
-        sys.modules["vocabulary_map_canonical"] = mod
-        try:
-            spec.loader.exec_module(mod)
-        except Exception:
-            sys.modules.pop("vocabulary_map_canonical", None)
-            continue
-        return mod.__dict__
+        if spec is not None and spec.loader is not None:
+            mod = importlib.util.module_from_spec(spec)
+            # Register in sys.modules BEFORE exec_module — required so
+            # @dataclass(frozen=True) inside the loaded module can resolve
+            # cls.__module__ during class processing.
+            sys.modules["vocabulary_map_canonical"] = mod
+            try:
+                spec.loader.exec_module(mod)
+                return mod.__dict__
+            except Exception:
+                sys.modules.pop("vocabulary_map_canonical", None)
     return {}
 
 

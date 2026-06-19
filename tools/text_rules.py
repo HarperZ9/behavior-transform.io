@@ -18,9 +18,6 @@ from types import ModuleType
 
 
 _ROOT = Path(__file__).resolve().parent
-_PROJECT_ROOT = _ROOT.parent.parent
-if str(_PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PROJECT_ROOT))
 
 _PROSE_SCOPES = frozenset({"free-prose", "verb-prose", "noun-prose"})
 _DEFAULT_SOURCE_NAMES = (
@@ -29,9 +26,6 @@ _DEFAULT_SOURCE_NAMES = (
 )
 _SOURCE_CANDIDATES = (
     _ROOT / "vocabulary_map.py",
-    Path.home() / "AGENTS" / "warden_shell" / "tools" / "vocabulary_map.py",
-    Path("AGENTS/warden_shell/tools/vocabulary_map.py"),
-    Path("AGENTS/warden_shell/warden_shell/tools/vocabulary_map.py"),
 )
 
 
@@ -74,11 +68,7 @@ def load_rule_source() -> ModuleType | None:
         module = _load_by_path(path)
         if module is not None:
             return module
-    try:
-        from warden_shell.tools import vocabulary_map as module
-    except Exception:
-        return None
-    return module
+    return None
 
 
 def _tier_name(severity: str) -> str:

@@ -17,8 +17,7 @@ Mode gate:
 
 Tools path:
     Resolved from BEHAVIOR_TRANSFORM_TOOLS env var, then from the hook
-    file location (../tools/), then falls back to the legacy warden_shell
-    path for backward compatibility.
+    file location (../tools/).
 """
 from __future__ import annotations
 

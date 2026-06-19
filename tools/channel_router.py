@@ -48,7 +48,6 @@ from typing import NamedTuple
 from io_state import transforms_enabled
 
 _TOOLS_ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(_TOOLS_ROOT.parent.parent))
 
 _TOOL_ROOT = str(_TOOLS_ROOT).replace("\\", "/")
 
@@ -89,24 +88,32 @@ ROUTE_TABLE: dict = {
 # --- Shared Calibration ------------------------------------------------------
 
 def _load_vocab_map() -> dict:
-    candidates = [
-        _TOOLS_ROOT / "vocabulary_map.py",
-        _TOOLS_ROOT.parent / "warden_shell" / "tools" / "vocabulary_map.py",
-    ]
     import importlib.util
-    for p in candidates:
-        if not p.is_file():
-            continue
+    import os as _os
+    bt = _os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
+    if bt:
+        p = Path(bt) / "vocabulary_map.py"
+        if p.is_file():
+            spec = importlib.util.spec_from_file_location("_vm_router", p)
+            if spec is not None and spec.loader is not None:
+                mod = importlib.util.module_from_spec(spec)
+                sys.modules["_vm_router"] = mod
+                try:
+                    spec.loader.exec_module(mod)
+                    return mod.__dict__
+                except Exception:
+                    sys.modules.pop("_vm_router", None)
+    p = Path(__file__).resolve().parent / "vocabulary_map.py"
+    if p.is_file():
         spec = importlib.util.spec_from_file_location("_vm_router", p)
-        if spec is None or spec.loader is None:
-            continue
-        mod = importlib.util.module_from_spec(spec)
-        sys.modules["_vm_router"] = mod
-        try:
-            spec.loader.exec_module(mod)
-            return mod.__dict__
-        except Exception:
-            sys.modules.pop("_vm_router", None)
+        if spec is not None and spec.loader is not None:
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules["_vm_router"] = mod
+            try:
+                spec.loader.exec_module(mod)
+                return mod.__dict__
+            except Exception:
+                sys.modules.pop("_vm_router", None)
     return {}
 
 

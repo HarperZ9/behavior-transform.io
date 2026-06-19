@@ -20,7 +20,7 @@ Commands whose output frequently includes workspace-specific text:
   pytest / python -m pytest — test output: function names + stack traces
   Select-String           — PowerShell grep equivalent
   cat / head / tail       — file content (complement to safe-read)
-  python -c / python -m   — ad-hoc execution that may import warden_shell
+  python -c / python -m   — ad-hoc execution that may import workspace modules
 
 Always allowed
 --------------
@@ -49,6 +49,14 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Patterns for commands that use the workspace path.
 # ---------------------------------------------------------------------------
+
+def _tools_path() -> Path:
+    bt = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
+    if bt and Path(bt).is_dir():
+        return Path(bt)
+    return Path(__file__).resolve().parents[1] / "tools"
+
+_SAFE_EXEC = str(_tools_path() / "safe_exec.py")
 
 _HIGH_OUTPUT_PATTERNS: list[re.Pattern] = [
     re.compile(p, re.IGNORECASE) for p in [
@@ -83,8 +91,8 @@ _ALLOW_PATTERNS: list[re.Pattern] = [
         # Workspace wrapper self-reference.
         r"safe_[\w.-]+\.py",
         r"aup_[\w.-]+\.py",
-        r"AGENTS[/\\]warden_shell[/\\]tools[/\\][\w.-]+\.py",
-        r"warden_shell[/\\]tools[/\\][\w.-]+\.py",
+        r"behavior-transform\.io[/\]tools[/\][\w.-]+\.py",
+        r"behavior-transform[._-][a-z]+[/\]tools[/\][\w.-]+\.py",
         # Hook infrastructure.
         r"\.claude[/\\]hooks",
         r"check-branch\.sh",
@@ -130,16 +138,21 @@ _ALLOW_PATTERNS: list[re.Pattern] = [
     ]
 ]
 
-_EXEC_GUIDANCE_MSG = """\
-Use the workspace command channel for this command:
+_EXEC_GUIDANCE_MSG = (
+    "Use the workspace command channel for this command:
 
-    python C:/Users/Zain/AGENTS/warden_shell/tools/safe_exec.py -- {cmd_short}
+"
+    "    python " + _SAFE_EXEC + " -- {cmd_short}
 
-    # With stderr:
-    python C:/Users/Zain/AGENTS/warden_shell/tools/safe_exec.py --include-stderr -- {cmd_short}
+"
+    "    # With stderr:
+"
+    "    python " + _SAFE_EXEC + " --include-stderr -- {cmd_short}
 
-For direct native inspection, ask the operator to enable research or academic mode.
-"""
+"
+    "For direct native inspection, ask the operator to enable research or academic mode.
+"
+)
 
 
 def _should_allow(command: str) -> bool:
