@@ -19,3 +19,8 @@ from classifier._context import (  # noqa: F401
     _context_files, _split_paragraphs, analyze_context,
     annotate_file, validate_file, ctx_fix,
 )
+from classifier._inference import (  # noqa: F401
+    InferencePattern, InferenceCalibrator, CalibrationPipeline,
+    _calibrate_text, bypass_source, intercept_stream, full_bypass,
+    rephrase_source, emit_calibration_map,
+)
