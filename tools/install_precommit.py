@@ -2,7 +2,7 @@
 """install_precommit - install the AUP-lint pre-commit hook into a git repo.
 
 Copies tools/pre-commit-aup.sh into the target repository's
-.git/hooks/pre-commit, sets it executable, and verifies that aup_lint.py
+.git/hooks/pre-commit, sets it executable, and verifies that pressure_scan.py
 is reachable from the hook's PATH-relative location.
 
 Usage:
@@ -10,10 +10,10 @@ Usage:
     python tools/install_precommit.py --uninstall   # remove the hook
     python tools/install_precommit.py --check       # dry-run check
 
-The installed hook runs `aup_lint.py --fail-tier2` against staged files
+The installed hook runs `pressure_scan.py --fail-tier2` against staged files
 only. It blocks commits containing Tier-1 drift (always) and Tier-2
 drift (when configured). It does not modify files — use
-`aup_lint.py --fix` separately to auto-rewrite.
+`pressure_scan.py --fix` separately to auto-rewrite.
 """
 from __future__ import annotations
 

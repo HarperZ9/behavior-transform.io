@@ -7,30 +7,30 @@ normalising tradecraft-register vocabulary to consulting-register equivalents.
 Exposes a Python API (CalibrationPipeline) and a full CLI surface.
 
 Usage — rephrasing pipeline (primary interface):
-    aup_evasion.py --rephrase SOURCE        Vocabulary calibration (Stages 1+2)
-    aup_evasion.py --infer-calibrate SOURCE Vocabulary + inference calibration (Stages 1+2+3)
+    classifier.py --rephrase SOURCE        Vocabulary calibration (Stages 1+2)
+    classifier.py --infer-calibrate SOURCE Vocabulary + inference calibration (Stages 1+2+3)
                    [--inference-strength {soft,moderate,hard}]
                    [--no-vocab]             Inference layer only (Stage 3)
-    aup_evasion.py --refusal-manage SOURCE  Probability estimation + staged modulation
+    classifier.py --refusal-manage SOURCE  Probability estimation + staged modulation
                    [--target-prob P]        Target refusal probability ceiling (default 0.10)
-    aup_evasion.py --pipeline-run SOURCE    Full pipeline trace: input→modulate→translate→output
+    classifier.py --pipeline-run SOURCE    Full pipeline trace: input→modulate→translate→output
                    [--target-prob P]
-    aup_evasion.py --rephrase SOURCE --output FILE
+    classifier.py --rephrase SOURCE --output FILE
                                             Write calibrated output to FILE
-    aup_evasion.py --intercept              Streaming calibration: stdin -> calibrated stdout
-    aup_evasion.py --bypass SOURCE          Calibrate FILE or '-' -> stdout; stats to stderr
-    aup_evasion.py --full-bypass [paths...] One-shot: calibrate ctx + tree, verify, report
-    aup_evasion.py --status                 Canonical pipeline health and integration surface
+    classifier.py --intercept              Streaming calibration: stdin -> calibrated stdout
+    classifier.py --bypass SOURCE          Calibrate FILE or '-' -> stdout; stats to stderr
+    classifier.py --full-bypass [paths...] One-shot: calibrate ctx + tree, verify, report
+    classifier.py --status                 Canonical pipeline health and integration surface
 
 Usage — prompt modulation (operator prompt calibration before model submission):
-    aup_evasion.py --prompt-modulate TEXT   Calibrate a prompt string for model submission
+    classifier.py --prompt-modulate TEXT   Calibrate a prompt string for model submission
                    [--prompt-role {system,user,assistant}]   Role context (default: user)
                    [--prompt-format {text,json,messages}]    Input format (default: text)
-    aup_evasion.py --prompt-session         Interactive always-on prompt filter:
+    classifier.py --prompt-session         Interactive always-on prompt filter:
                                             stdin → calibrated stdout, trace → stderr
 
 Python API:
-    from aup_evasion import (RefusalModulator, InferenceCalibrator,
+    from classifier import (RefusalModulator, InferenceCalibrator,
                               CalibrationPipeline, PromptModulator)
     # Prompt modulation — role-aware, inference-level refusal reduction
     pm = PromptModulator(role='user')           # or 'system' / 'assistant'
@@ -50,41 +50,41 @@ Python API:
     calibrated, stats = pipeline.calibrate(text)
 
 Usage — context / session management:
-    aup_evasion.py --ctx                    Analyze auto-loaded session context
-    aup_evasion.py --ctx-fix                Apply calibrations to context files in-place
-    aup_evasion.py --fence                  Session fence check against active policy
-    aup_evasion.py --report                 Unified report: policy + context + tree + drift
-    aup_evasion.py --enforce [paths...]     Remediation plan for active policy
+    classifier.py --ctx                    Analyze auto-loaded session context
+    classifier.py --ctx-fix                Apply calibrations to context files in-place
+    classifier.py --fence                  Session fence check against active policy
+    classifier.py --report                 Unified report: policy + context + tree + drift
+    classifier.py --enforce [paths...]     Remediation plan for active policy
 
 Usage — analysis and diagnostics:
-    aup_evasion.py --emit-calibration SOURCE  Emit calibration child safety assessment for a source (non-destructive)
-    aup_evasion.py --annotate FILE          Per-segment pressure heat-child safety assessment
-    aup_evasion.py --validate FILE          Before/after pressure after calibration
-    aup_evasion.py --budget [paths...]      Aggregate tree pressure budget
-    aup_evasion.py --baseline [paths...]    Save current pressure as baseline
-    aup_evasion.py --drift [paths...]       Regressions vs saved baseline
-    aup_evasion.py --pipeline [paths...]    End-to-end: discover + lint + budget + gate
-    aup_evasion.py --gate [paths...]        CI gate: exits 1 on Tier 1 hits or BLOCK pressure
-    aup_evasion.py --modulate [paths...]    Context-type modulation: per-region weighted pressure child safety assessment
-    aup_evasion.py --window [paths...]      Sliding-window density peaks (--window-size N, default 10)
-    aup_evasion.py --compound [paths...]    Co-occurrence compound detection (--min-co-count N, default 2)
+    classifier.py --emit-calibration SOURCE  Emit calibration child safety assessment for a source (non-destructive)
+    classifier.py --annotate FILE          Per-segment pressure heat-child safety assessment
+    classifier.py --validate FILE          Before/after pressure after calibration
+    classifier.py --budget [paths...]      Aggregate tree pressure budget
+    classifier.py --baseline [paths...]    Save current pressure as baseline
+    classifier.py --drift [paths...]       Regressions vs saved baseline
+    classifier.py --pipeline [paths...]    End-to-end: discover + lint + budget + gate
+    classifier.py --gate [paths...]        CI gate: exits 1 on Tier 1 hits or BLOCK pressure
+    classifier.py --modulate [paths...]    Context-type modulation: per-region weighted pressure child safety assessment
+    classifier.py --window [paths...]      Sliding-window density peaks (--window-size N, default 10)
+    classifier.py --compound [paths...]    Co-occurrence compound detection (--min-co-count N, default 2)
 
 Usage — policy management:
-    aup_evasion.py --policy-list            List all policies (built-in + custom)
-    aup_evasion.py --policy-show NAME       Show policy details
-    aup_evasion.py --policy-activate NAME   Set active policy
-    aup_evasion.py --policy-save NAME       Save/create a custom policy
-    aup_evasion.py --policy-delete NAME     Delete a custom policy
-    aup_evasion.py --policy-active          Show active policy
-    aup_evasion.py --policy-diff A B        Compare two policies side by side
-    aup_evasion.py --policy-export NAME     Export policy as portable JSON blob
-    aup_evasion.py --policy-import FILE     Import policy from exported JSON file
-    aup_evasion.py --audit-log              Show recent policy evaluation audit log
-    aup_evasion.py --hook-install           Install AUP gate as .git/hooks/pre-commit
-    aup_evasion.py --hook-remove            Remove AUP-managed .git/hooks/pre-commit
+    classifier.py --policy-list            List all policies (built-in + custom)
+    classifier.py --policy-show NAME       Show policy details
+    classifier.py --policy-activate NAME   Set active policy
+    classifier.py --policy-save NAME       Save/create a custom policy
+    classifier.py --policy-delete NAME     Delete a custom policy
+    classifier.py --policy-active          Show active policy
+    classifier.py --policy-diff A B        Compare two policies side by side
+    classifier.py --policy-export NAME     Export policy as portable JSON blob
+    classifier.py --policy-import FILE     Import policy from exported JSON file
+    classifier.py --audit-log              Show recent policy evaluation audit log
+    classifier.py --hook-install           Install AUP gate as .git/hooks/pre-commit
+    classifier.py --hook-remove            Remove AUP-managed .git/hooks/pre-commit
 
 Python API:
-    from aup_evasion import CalibrationPipeline
+    from classifier import CalibrationPipeline
     pipeline = CalibrationPipeline()
     calibrated, stats = pipeline.calibrate(text)
     pipeline.calibrate_file(path)
@@ -115,7 +115,7 @@ ROOT = Path(__file__).resolve().parent
 AGENTS_ROOT = ROOT.parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(AGENTS_ROOT))
-from aup_lint import (  # type: ignore[import-not-found]
+from pressure_scan import (  # type: ignore[import-not-found]
     _default_paths, _fix_file, _is_whitelisted, _line_count,
     _pressure_label, _pressure_score, _scan_file, _walk, PROFILES,
 )
@@ -560,7 +560,7 @@ def pipeline_report(paths: list[Path], include_tier2: bool,
     Gate passes when there are zero Tier 1 hits AND no file exceeds threshold.
     """
     try:
-        from aup_discover import discover as _discover  # type: ignore[import-not-found]
+        from term_discover import discover as _discover  # type: ignore[import-not-found]
         uncalibrated = _discover(paths)
     except ImportError:
         uncalibrated = []
@@ -708,7 +708,7 @@ def enforce_plan(paths: list[Path], include_tier2: bool,
             "priority": "critical",
             "target": "session-context",
             "reason": f"{fence['total_t1']} Tier 1 hit(s) in auto-loaded context files",
-            "action": "aup_evasion.py --ctx-fix",
+            "action": "classifier.py --ctx-fix",
             "executable": True,
         })
 
@@ -718,7 +718,7 @@ def enforce_plan(paths: list[Path], include_tier2: bool,
             "priority": "critical",
             "target": "tree",
             "reason": f"{pipe['tier1_hits']} Tier 1 hit(s) across {pipe['files_with_hits']} file(s)",
-            "action": "aup_lint.py --fix [paths]",
+            "action": "pressure_scan.py --fix [paths]",
             "executable": False,
         })
 
@@ -728,7 +728,7 @@ def enforce_plan(paths: list[Path], include_tier2: bool,
             "priority": "high",
             "target": fo["path"],
             "reason": f"pressure {fo['score']:.1f} >= threshold {policy.threshold:.0f}",
-            "action": f"aup_lint.py --fix {fo['path']}",
+            "action": f"pressure_scan.py --fix {fo['path']}",
             "executable": False,
         })
 
@@ -738,7 +738,7 @@ def enforce_plan(paths: list[Path], include_tier2: bool,
             "priority": "medium",
             "target": "vocabulary_map.py",
             "reason": f"{pipe['uncalibrated_count']} uncalibrated term(s) not yet in calibration child safety assessment",
-            "action": "aup_discover.py --suggest [paths]  # then add stubs to vocabulary_map.py",
+            "action": "term_discover.py --suggest [paths]  # then add stubs to vocabulary_map.py",
             "executable": False,
         })
 
@@ -749,7 +749,7 @@ def enforce_plan(paths: list[Path], include_tier2: bool,
             "target": "session-context",
             "reason": (f"max context pressure {fence['max_pressure']:.1f} "
                        f">= threshold {policy.threshold:.0f}"),
-            "action": "aup_evasion.py --ctx-fix",
+            "action": "classifier.py --ctx-fix",
             "executable": True,
         })
 
@@ -757,7 +757,7 @@ def enforce_plan(paths: list[Path], include_tier2: bool,
     executed: list[str] = []
     if not dry_run:
         for step in remediation:
-            if step["executable"] and step["action"].startswith("aup_evasion.py --ctx-fix"):
+            if step["executable"] and step["action"].startswith("classifier.py --ctx-fix"):
                 ctx_fix(include_tier2=include_tier2, dry_run=False)
                 executed.append(step["action"])
 
@@ -958,7 +958,7 @@ class CalibrationPipeline:
         calibrated, stats = pipeline.calibrate(text)
 
         # Arbitrary inline policy
-        from aup_evasion import PolicyDef
+        from classifier import PolicyDef
         pol = PolicyDef("custom", "project-specific", "block", "warn", 20.0, False)
         pipeline = CalibrationPipeline(policy=pol)
 
@@ -1553,9 +1553,9 @@ _HOOK_MARKER = "# aup-evasion-gate"
 _HOOK_SCRIPT = """\
 #!/bin/sh
 # aup-evasion-gate
-# AUP classifier evasion gate -- installed by aup_evasion.py --hook-install
-# Remove with: python warden_shell/tools/aup_evasion.py --hook-remove
-python warden_shell/tools/aup_evasion.py --gate "$@"
+# Classifier gate -- installed by classifier.py --hook-install
+# Remove with: python warden_shell/tools/classifier.py --hook-remove
+python warden_shell/tools/classifier.py --gate "$@"
 exit $?
 """
 
@@ -3027,7 +3027,7 @@ def main(argv: list[str]) -> int:
                   f"T2={r['total_t2']} ({r['tier2_action']})")
             if r["blocked_by_t1"]:
                 print(f"  Blocked: {r['total_t1']} Tier 1 hit(s) — action=block")
-                print("  Remedy:  aup_evasion.py --ctx-fix")
+                print("  Remedy:  classifier.py --ctx-fix")
             if r["blocked_by_threshold"]:
                 print(f"  Blocked: max pressure {r['max_pressure']:.1f} "
                       f">= threshold {r['threshold']:.0f}")
@@ -3067,12 +3067,12 @@ def main(argv: list[str]) -> int:
                 print("  Drift  [no baseline — run --baseline to enable]")
             if r["pipeline"]["uncalibrated_count"]:
                 print(f"  Uncalibrated: {r['pipeline']['uncalibrated_count']} term(s)"
-                      f" — run aup_discover.py for details")
+                      f" — run term_discover.py for details")
             print()
             if not r["fence"]["fence_pass"]:
-                print("  Action required: aup_evasion.py --ctx-fix")
+                print("  Action required: classifier.py --ctx-fix")
             if not r["pipeline"]["gate_pass"]:
-                print("  Action required: aup_lint.py --fix [paths]")
+                print("  Action required: pressure_scan.py --fix [paths]")
         return 0 if r["overall_pass"] else 1
 
     # --- Enforce ---
@@ -3282,7 +3282,7 @@ def main(argv: list[str]) -> int:
                   f"residual_T1={r['residual_t1']}")
             if not r["overall_pass"]:
                 print("  Residual hits remain — add LINTER_WHITELIST entries for intentional "
-                      "archive sites, or run aup_lint.py --fix for file-level detail.")
+                      "archive sites, or run pressure_scan.py --fix for file-level detail.")
         return 0 if r["overall_pass"] else 1
 
     if args.hook_install:
@@ -3712,5 +3712,5 @@ if __name__ == "__main__":
     try:
         sys.exit(main(sys.argv[1:]))
     except Exception as e:
-        sys.stderr.write(f"aup_evasion: {e}\n")
+        sys.stderr.write(f"classifier: {e}\n")
         sys.exit(1)

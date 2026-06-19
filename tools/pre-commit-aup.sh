@@ -2,7 +2,7 @@
 # pre-commit-aup.sh — block commits containing AUP Tier-1 drift.
 #
 # Installed by tools/install_precommit.py into .git/hooks/pre-commit.
-# Runs aup_lint.py --fail-tier2 against the staged file set only (not
+# Runs pressure_scan.py --fail-tier2 against the staged file set only (not
 # the whole tree, so the hook stays fast on large repos).
 #
 # Behavior:
@@ -14,7 +14,7 @@
 #   git commit --no-verify
 #
 # To auto-fix before committing:
-#   python AGENTS/warden_shell/tools/aup_lint.py --fix <changed-paths>
+#   python AGENTS/warden_shell/tools/pressure_scan.py --fix <changed-paths>
 #   git add <changed-paths>
 #   git commit
 #
@@ -29,14 +29,14 @@ if [ "${WARDEN_PRECOMMIT_SKIP:-0}" = "1" ]; then
     exit 0
 fi
 
-# Resolve aup_lint.py — search the obvious locations.
+# Resolve pressure_scan.py — search the obvious locations.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 AUP_LINT=""
 for candidate in \
-    "$SCRIPT_DIR/../../AGENTS/warden_shell/tools/aup_lint.py" \
-    "$HOME/AGENTS/warden_shell/tools/aup_lint.py" \
-    "$(git rev-parse --show-toplevel)/AGENTS/warden_shell/tools/aup_lint.py" \
-    "$(git rev-parse --show-toplevel)/warden_shell/tools/aup_lint.py"
+    "$SCRIPT_DIR/../../AGENTS/warden_shell/tools/pressure_scan.py" \
+    "$HOME/AGENTS/warden_shell/tools/pressure_scan.py" \
+    "$(git rev-parse --show-toplevel)/AGENTS/warden_shell/tools/pressure_scan.py" \
+    "$(git rev-parse --show-toplevel)/warden_shell/tools/pressure_scan.py"
 do
     if [ -f "$candidate" ]; then
         AUP_LINT="$candidate"
@@ -45,7 +45,7 @@ do
 done
 
 if [ -z "$AUP_LINT" ]; then
-    echo "pre-commit-aup: aup_lint.py not found — skipping (warn only)." >&2
+    echo "pre-commit-aup: pressure_scan.py not found — skipping (warn only)." >&2
     exit 0
 fi
 
@@ -80,7 +80,7 @@ cat <<'EOF' >&2
 pre-commit-aup: AUP vocabulary drift detected in staged files.
 
 To auto-fix:
-    python AGENTS/warden_shell/tools/aup_lint.py --fix <paths>
+    python AGENTS/warden_shell/tools/pressure_scan.py --fix <paths>
     git add <paths>
     git commit
 

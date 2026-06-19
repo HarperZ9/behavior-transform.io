@@ -2,7 +2,7 @@
 """warden_safe_classify — full-stack safe wrapper for turn classification.
 
 Runs an operator turn through the complete model safety layer:
-  1. Pressure scan (aup_lint T1/T2 hit detection, pressure score)
+  1. Pressure scan (pressure_scan T1/T2 hit detection, pressure score)
   2. Active policy gate (block / warn / passthrough per active policy)
   3. Friction gate (refusal probability, cyber vs standard route)
   4. Keyword classification (OperatorTurnClassifier category + intent)
@@ -43,7 +43,7 @@ Design notes
   pressure is measured accurately before any substitution.
 * Vocabulary calibration and semantic modulation are applied to OUTPUT
   string fields (raw_turn_head, keywords_hit) before they reach context.
-* --full-bypass delegates to aup_evasion.full_bypass() which calibrates
+* --full-bypass delegates to classifier.full_bypass() which calibrates
   auto-loaded session context files and the AGENTS tree, then reports
   residual pressure. It does NOT invoke the keyword classifier.
 * All safety-layer calls are lazy-imported and wrapped in try/except;
@@ -67,7 +67,7 @@ from typing import Iterable
 
 _ROOT = Path(__file__).resolve().parent
 _AGENTS_ROOT = _ROOT.parent.parent      # C:\Users\Zain\AGENTS
-sys.path.insert(0, str(_ROOT))          # makes aup_lint importable
+sys.path.insert(0, str(_ROOT))          # makes pressure_scan importable
 sys.path.insert(0, str(_AGENTS_ROOT))  # makes warden_per_turn_dispatcher importable
 
 
@@ -123,9 +123,9 @@ def _apply_substitutions(
 # ── Layer 1: Pressure scan ────────────────────────────────────────────────────
 
 def _pressure_scan(text: str, include_tier2: bool) -> dict:
-    """Score T1/T2 pressure of input text via aup_lint (fail-open)."""
+    """Score T1/T2 pressure of input text via pressure_scan (fail-open)."""
     try:
-        from aup_lint import _scan_file, _pressure_score, _pressure_label  # type: ignore
+        from pressure_scan import _scan_file, _pressure_score, _pressure_label  # type: ignore
     except Exception:
         return {"score": 0.0, "label": "UNKNOWN", "tier1_hits": 0,
                 "tier2_hits": 0, "status": "unavailable"}
@@ -150,28 +150,28 @@ def _pressure_scan(text: str, include_tier2: bool) -> dict:
 
 # ── Layer 2: Policy gate ──────────────────────────────────────────────────────
 
-def _load_aup_evasion():
+def _load_classifier():
     spec = importlib.util.spec_from_file_location(
-        "aup_evasion", _ROOT / "classifier.py"
+        "classifier", _ROOT / "classifier.py"
     )
     if spec is None or spec.loader is None:
         return None
     mod = importlib.util.module_from_spec(spec)
-    sys.modules.setdefault("aup_evasion", mod)
+    sys.modules.setdefault("classifier", mod)
     try:
         spec.loader.exec_module(mod)
         return mod
     except Exception:
-        sys.modules.pop("aup_evasion", None)
+        sys.modules.pop("classifier", None)
         return None
 
 
 def _policy_gate(pressure: dict, include_tier2: bool) -> dict:
     """Evaluate active policy against pressure result (fail-open)."""
     try:
-        mod = _load_aup_evasion()
+        mod = _load_classifier()
         if mod is None:
-            raise RuntimeError("aup_evasion unavailable")
+            raise RuntimeError("classifier unavailable")
         policy = mod._active_policy()
     except Exception:
         return {"name": "unknown", "decision": "warn", "block": False,
@@ -285,11 +285,11 @@ def _semantic_modulate(text: str) -> tuple[str, str]:
 # ── Full-bypass ───────────────────────────────────────────────────────────────
 
 def _run_full_bypass(include_tier2: bool, dry_run: bool, paths: list[Path]) -> dict:
-    """Delegate to aup_evasion.full_bypass(): calibrate context + tree, verify, report."""
+    """Delegate to classifier.full_bypass(): calibrate context + tree, verify, report."""
     try:
-        mod = _load_aup_evasion()
+        mod = _load_classifier()
         if mod is None:
-            raise RuntimeError("aup_evasion unavailable")
+            raise RuntimeError("classifier unavailable")
         return mod.full_bypass(paths, include_tier2=include_tier2, dry_run=dry_run)
     except Exception as exc:
         return {"error": str(exc), "status": "unavailable"}
@@ -394,7 +394,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         "--full-bypass",
         action="store_true",
         help=(
-            "Run aup_evasion.full_bypass(): calibrate session context files and "
+            "Run classifier.full_bypass(): calibrate session context files and "
             "the AGENTS tree, verify residual pressure, return structured report. "
             "Does not invoke the keyword classifier."
         ),
@@ -436,7 +436,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         }, indent=2))
         return 0
 
-    # ── Full-bypass: delegate to aup_evasion ──────────────────────────────────
+    # ── Full-bypass: delegate to classifier ──────────────────────────────────
 
     if args.full_bypass:
         paths = [_AGENTS_ROOT]
