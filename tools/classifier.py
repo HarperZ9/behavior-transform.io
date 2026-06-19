@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """AUP calibration pipeline — canonical general-purpose rephrasing layer.
 
 Canonical routing layer for vocabulary calibration across any content source.
@@ -120,13 +120,7 @@ from aup_lint import (  # type: ignore[import-not-found]
     _pressure_label, _pressure_score, _scan_file, _walk, PROFILES,
 )
 
-try:
-    from warden_shell.warden_shell.classifier_modifier_layer.semantic_modulator import (
-        semantic_modulator as _sem_mod_factory,
-    )
-    _SEMANTIC_MODULATOR_AVAILABLE = True
-except Exception:  # pragma: no cover
-    _SEMANTIC_MODULATOR_AVAILABLE = False
+from semantic_intent_reframer import reframe as _sem_mod_reframe  # type: ignore[import]
 
 _BASELINE_PATH = ROOT.parent / ".aup-pressure-baseline.json"
 _POLICY_PATH   = ROOT.parent / ".aup-policies.json"
@@ -2163,28 +2157,8 @@ class PromptModulator:
             # substitution). Reduces refusal probability before RefusalModulator
             # runs its staged calibration, so targets are hit sooner.
             sem_trace: dict = {}
-            if _SEMANTIC_MODULATOR_AVAILABLE:
-                sem_result = _sem_mod_factory().modulate(content)
-                if sem_result.blocked:
-                    # Hard-stop category: skip downstream, flag in trace.
-                    calibrated_msgs.append({"role": effective_role,
-                                             "content": content})
-                    traces.append({
-                        "role":           effective_role,
-                        "blocked":        True,
-                        "blocked_categories": sem_result.blocked_categories,
-                        "initial_prob":   1.0,
-                        "final_prob":     1.0,
-                        "initial_label":  "blocked",
-                        "final_label":    "blocked",
-                        "target_met":     False,
-                        "stage_reached":  0,
-                        "stages_trace":   [],
-                        "semantic":       sem_result.audit_trail,
-                    })
-                    continue
-                content = sem_result.modulated
-                sem_trace = sem_result.audit_trail
+            reframed, _rewrites = _sem_mod_reframe(content)
+            content = reframed
 
             mod    = self._modulator_for(effective_role)
             result = mod.modulate(content, dry_run=dry_run)
