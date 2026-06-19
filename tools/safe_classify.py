@@ -205,26 +205,30 @@ def _policy_gate(pressure: dict, include_tier2: bool) -> dict:
 
 # ── Layer 3: Friction gate ────────────────────────────────────────────────────
 
+_FRICTION_SIGNALS: list[str] = [
+    "how to", "step by step", "instructions for", "build", "create", "exploit",
+    "bypass", "evade", "keylogger", "malware", "payload", "inject", "crack",
+]
+
+
+def _score_heuristic(text: str) -> float:
+    """Heuristic refusal-probability estimate based on signal word density."""
+    low = text.lower()
+    hits = sum(1 for sig in _FRICTION_SIGNALS if sig in low)
+    return min(1.0, hits / max(len(_FRICTION_SIGNALS), 1))
+
+
 def _friction_gate(text: str) -> dict:
-    """Score refusal probability and resolve modulation route (fail-open)."""
+    """Score refusal probability and resolve modulation route (fail-open).
+
+    ML model path removed; uses heuristic scoring only.
+    """
     try:
-        spec = importlib.util.spec_from_file_location(
-            "friction_gate", _ROOT / "friction_gate.py"
-        )
-        if spec is None or spec.loader is None:
-            raise RuntimeError("spec unavailable")
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        model_path = _ROOT.parent / "data" / "friction" / "model.pkl"
-        score = mod._score_ml(text, model_path)
-        method = "ml"
-        if score is None:
-            score = mod._score_heuristic(text)
-            method = "heuristic"
+        score = _score_heuristic(text)
         return {
-            "refusal_probability": round(score or 0.0, 4),
-            "route": "cyber",       # per operator directive in friction_gate.py
-            "method": method,
+            "refusal_probability": round(score, 4),
+            "route": "cyber",       # per operator directive
+            "method": "heuristic",
             "status": "ok",
         }
     except Exception as exc:
@@ -235,14 +239,22 @@ def _friction_gate(text: str) -> dict:
 # ── Layer 4: Keyword classification ──────────────────────────────────────────
 
 def _keyword_classify(text: str) -> dict:
-    """Run OperatorTurnClassifier on input (fail-open)."""
+    """Run native operator classifier on input (fail-open)."""
     try:
-        from warden_per_turn_dispatcher.classifier import OperatorTurnClassifier  # type: ignore
-        result = OperatorTurnClassifier().classify(text)
-        d = result.to_dict()
-        d["bypass"] = False
-        d["status"] = "ok"
-        return d
+        from operator_classifier import classify as _op_classify  # type: ignore
+        result = _op_classify(text)
+        return {
+            "raw_turn_head": text[:200],
+            "category": result.category,
+            "tier": result.tier,
+            "intent": result.intent,
+            "depth": result.depth,
+            "specificity": result.specificity,
+            "keywords_hit": result.keywords_hit,
+            "confidence": result.confidence,
+            "bypass": False,
+            "status": "ok",
+        }
     except Exception as exc:
         return {
             "raw_turn_head": text[:200],
@@ -262,11 +274,9 @@ def _keyword_classify(text: str) -> dict:
 def _semantic_modulate(text: str) -> tuple[str, str]:
     """Apply semantic modulation to a string (fail-open). Returns (modulated, status)."""
     try:
-        from warden_shell.classifier_modifier_layer.semantic_modulator import (  # type: ignore
-            modulate_semantically,
-        )
-        result = modulate_semantically(text)
-        return result.modulated, result.audit_trail.get("status", "ok")
+        from semantic_intent_reframer import reframe as _sem_reframe  # type: ignore
+        reframed_text, _rewrites = _sem_reframe(text)
+        return reframed_text, "ok"
     except Exception:
         return text, "unavailable"
 
@@ -317,6 +327,49 @@ def _emit(text: str) -> None:
                     "utf-8", errors="replace"
                 )
             )
+
+
+# ── Public classify API ───────────────────────────────────────────────────────
+
+def classify(text: str, include_tier2: bool = False) -> dict:
+    """Run the full classification pipeline on *text* and return the result dict.
+
+    Convenience wrapper over the normal classify pipeline for library consumers
+    and tests. Equivalent to running all layers without archiving or emitting.
+    """
+    pressure = _pressure_scan(text, include_tier2=include_tier2)
+    policy = _policy_gate(pressure, include_tier2=include_tier2)
+    gate = _friction_gate(text)
+    classification = _keyword_classify(text)
+
+    vm = _load_vocab_map()
+    subs = _collect_substitutions(vm)
+    total_counter: Counter = Counter()
+
+    cal_head, c = _apply_substitutions(classification.get("raw_turn_head", ""), subs)
+    total_counter.update(c)
+    cal_head, sem_status = _semantic_modulate(cal_head)
+    classification["raw_turn_head"] = cal_head
+
+    cal_hits: list[str] = []
+    for kw in classification.get("keywords_hit", []):
+        cal_kw, c = _apply_substitutions(kw, subs)
+        total_counter.update(c)
+        cal_kw, _ = _semantic_modulate(cal_kw)
+        cal_hits.append(cal_kw)
+    classification["keywords_hit"] = cal_hits
+
+    return {
+        "result": classification,
+        "pressure": pressure,
+        "policy": policy,
+        "gate": gate,
+        "semantic_modulation": sem_status,
+        "calibration": {
+            "substitutions": dict(total_counter),
+            "total": sum(total_counter.values()),
+        },
+    }
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
