@@ -33,102 +33,30 @@ Behavior
 * Default: emits calibrated text to stdout with a one-line header.
 * Idempotent on already-calibrated text.
 * Archives raw input to .warden-safe-cache/prompts/<sha>.raw unless --no-archive.
-* Never sends the prompt anywhere — purely a local string transformation.
+* Never sends the prompt anywhere -- purely a local string transformation.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
-import re
 import subprocess
 import sys
-from collections import Counter
 from pathlib import Path
 from typing import Iterable
 
 from io_state import add_io_toggle_args, transforms_enabled
+from _core import build_engine
 
 
 _ROOT = Path(__file__).resolve().parent
 
 
-def _load_vocab_map() -> dict:
-    """Import vocabulary_map by file path so layout differences don't matter."""
-    import importlib.util
-    import os as _os
-    bt = _os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
-    if bt:
-        p = Path(bt) / "vocabulary_map.py"
-        if p.is_file():
-            spec = importlib.util.spec_from_file_location("vocabulary_map_canonical", p)
-            if spec is not None and spec.loader is not None:
-                mod = importlib.util.module_from_spec(spec)
-                sys.modules["vocabulary_map_canonical"] = mod
-                try:
-                    spec.loader.exec_module(mod)
-                    return mod.__dict__
-                except Exception:
-                    sys.modules.pop("vocabulary_map_canonical", None)
-    p = Path(__file__).resolve().parent / "vocabulary_map.py"
-    if p.is_file():
-        spec = importlib.util.spec_from_file_location("vocabulary_map_canonical", p)
-        if spec is not None and spec.loader is not None:
-            mod = importlib.util.module_from_spec(spec)
-            # Register in sys.modules BEFORE exec_module — required so
-            # @dataclass(frozen=True) inside the loaded module can resolve
-            # cls.__module__ during class processing.
-            sys.modules["vocabulary_map_canonical"] = mod
-            try:
-                spec.loader.exec_module(mod)
-                return mod.__dict__
-            except Exception:
-                sys.modules.pop("vocabulary_map_canonical", None)
-    return {}
-
-
-def _collect_substitutions(vm: dict) -> list[tuple[re.Pattern, str, str]]:
-    calibrations = vm.get("CALIBRATIONS", ())
-    keep = set(vm.get("KEEP_TERMS", ()) or ())
-    keep_lower = {k.lower() if isinstance(k, str) else k for k in keep}
-
-    candidates: list[tuple[str, str, str]] = []
-    for c in calibrations:
-        original = getattr(c, "original", None)
-        calibrated = getattr(c, "calibrated", None)
-        severity = getattr(c, "severity", "") or ""
-        if not isinstance(original, str) or not isinstance(calibrated, str):
-            continue
-        if original.lower() in keep_lower:
-            continue
-        sev = severity.lower()
-        if sev in ("tier1", "tier_1", "t1"):
-            tier = "T1"
-        elif sev in ("tier2", "tier_2", "t2"):
-            tier = "T2"
-        else:
-            tier = sev.upper() or "??"
-        candidates.append((original, calibrated, tier))
-
-    candidates.sort(key=lambda t: len(t[0]), reverse=True)
-    compiled: list[tuple[re.Pattern, str, str]] = []
-    for src, dst, tier in candidates:
-        pat = re.compile(r"\b" + re.escape(src) + r"\b", re.IGNORECASE)
-        compiled.append((pat, dst, tier))
-    return compiled
-
-
-def _apply_substitutions(
-    text: str,
-    subs: list[tuple[re.Pattern, str, str]],
-) -> tuple[str, Counter]:
-    counter: Counter = Counter()
-    for pat, dst, tier in subs:
-        def _repl(_m: re.Match, _d: str = dst, _t: str = tier) -> str:
-            counter[_t] += 1
-            return _d
-        text = pat.sub(_repl, text)
-    return text, counter
+def _apply_calibration(text: str) -> str:
+    """Apply calibration engine and return the calibrated text."""
+    engine = build_engine()
+    calibrated, _, _ = engine.apply(text)
+    return calibrated
 
 
 def _from_clipboard() -> str:
@@ -265,12 +193,12 @@ def main(argv: Iterable[str] | None = None) -> int:
 
     io_on = transforms_enabled(args)
     if io_on:
-        vm = _load_vocab_map()
-        subs = _collect_substitutions(vm)
-        calibrated, counter = _apply_substitutions(raw, subs)
+        engine = build_engine()
+        calibrated, t1_hits, t2_hits = engine.apply(raw)
+        counts = {"tier1": t1_hits, "tier2": t2_hits}
     else:
-        calibrated, counter = raw, Counter()
-    counts = {tier: int(n) for tier, n in counter.items()}
+        calibrated = raw
+        counts = {"tier1": 0, "tier2": 0}
     total = sum(counts.values())
 
     if args.diff_only:
@@ -286,9 +214,9 @@ def main(argv: Iterable[str] | None = None) -> int:
             "substitutions": counts,
             "total": total,
             "io_channel": "on" if io_on else "off",
-            "status": "FAIL" if counts.get("T1", 0) else "OK",
+            "status": "FAIL" if counts.get("tier1", 0) else "OK",
         }, indent=2) + "\n")
-        return 1 if counts.get("T1", 0) else 0
+        return 1 if counts.get("tier1", 0) else 0
 
     if args.to_clipboard:
         ok = _to_clipboard(calibrated)

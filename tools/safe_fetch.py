@@ -23,7 +23,7 @@ Network policy:
     * Default 20-second connect+read timeout.
     * One redirect hop max (configurable via --max-redirects).
     * Refuses non-HTTP(S) schemes (file://, ftp://, data:, javascript:).
-    * Respects HTTPS certificate verification (cannot be disabled here —
+    * Respects HTTPS certificate verification (cannot be disabled here --
       use a real client for that).
 """
 from __future__ import annotations
@@ -37,13 +37,12 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections import Counter
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Iterable
 
 from io_state import add_io_toggle_args, transforms_enabled
-from text_rules import apply_text_rules, collect_text_rules
+from _core import build_engine
 
 
 _DEFAULT_TIMEOUT_S = 20.0
@@ -291,10 +290,11 @@ def main(argv: Iterable[str] | None = None) -> int:
 
     io_on = transforms_enabled(args)
     if io_on:
-        rules = collect_text_rules()
-        payload_text, counter = apply_text_rules(raw_text, rules)
+        engine = build_engine()
+        payload_text, t1_hits, t2_hits = engine.apply(raw_text)
+        counter = {"tier1": t1_hits, "tier2": t2_hits}
     else:
-        payload_text, counter = raw_text, Counter()
+        payload_text, counter = raw_text, {"tier1": 0, "tier2": 0}
     counts = {tier: int(n) for tier, n in counter.items()}
     total = sum(counts.values())
 

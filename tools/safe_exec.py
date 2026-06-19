@@ -42,16 +42,14 @@ import json
 import os
 import subprocess
 import sys
-from collections import Counter
 from pathlib import Path
 from typing import Iterable
 
 from io_state import add_io_toggle_args, transforms_enabled
-from text_rules import apply_text_rules, collect_text_rules
+from _core import build_engine
 
 
 _ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(_ROOT.parent.parent))
 
 
 def _archive_raw(cmd_repr: str, stdout: bytes, stderr: bytes) -> Path:
@@ -192,16 +190,19 @@ def main(argv: Iterable[str] | None = None) -> int:
     stderr_t = stderr_b.decode("utf-8", errors="replace")
 
     if io_on:
-        rules = collect_text_rules()
-        stdout_text, out_counter = apply_text_rules(stdout_t, rules)
-        stderr_text, err_counter = apply_text_rules(stderr_t, rules)
+        engine = build_engine()
+        stdout_text, out_t1, out_t2 = engine.apply(stdout_t)
+        stderr_text, err_t1, err_t2 = engine.apply(stderr_t)
+        out_counter = {"tier1": out_t1, "tier2": out_t2}
+        err_counter = {"tier1": err_t1, "tier2": err_t2}
     else:
         stdout_text, stderr_text = stdout_t, stderr_t
-        out_counter, err_counter = Counter(), Counter()
-    total_counter: Counter = Counter()
-    total_counter.update(out_counter)
-    total_counter.update(err_counter)
-    counts = {tier: int(n) for tier, n in total_counter.items()}
+        out_counter = {"tier1": 0, "tier2": 0}
+        err_counter = {"tier1": 0, "tier2": 0}
+    counts = {
+        "tier1": out_counter["tier1"] + err_counter["tier1"],
+        "tier2": out_counter["tier2"] + err_counter["tier2"],
+    }
     total = sum(counts.values())
 
     if args.diff_only:

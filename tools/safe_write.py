@@ -42,16 +42,15 @@ import json
 import os
 import sys
 import tempfile
-from collections import Counter
 from pathlib import Path
 from typing import Iterable
 
 from io_state import add_io_toggle_args, transforms_enabled
-from text_rules import apply_text_rules, collect_text_rules, is_rule_source_path
+from text_rules import is_rule_source_path
+from _core import build_engine
 
 
 _ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(_ROOT.parent.parent))
 
 
 def _read_input(
@@ -100,7 +99,7 @@ def _atomic_write(dest: Path, text: str, *, append: bool) -> None:
 def _archive_pre_write(dest: Path, original: str) -> Path:
     """Stash the input payload under .warden-safe-cache for auditing.
 
-    The cache layout mirrors safe_read's: full path with ':' → '_' so it
+    The cache layout mirrors safe_read's: full path with ':' -> '_' so it
     is portable across Windows/Linux. Suffix ``.pre`` distinguishes
     write-side archives from safe_read's ``.safe`` artifacts.
     """
@@ -178,10 +177,11 @@ def main(argv: Iterable[str] | None = None) -> int:
     io_on = transforms_enabled(args)
     # Rule-source files keep their own terminology intact.
     if not io_on or is_rule_source_path(args.dest):
-        final_text, counter = original, Counter()
+        final_text, counter = original, {"tier1": 0, "tier2": 0}
     else:
-        rules = collect_text_rules()
-        final_text, counter = apply_text_rules(original, rules)
+        engine = build_engine()
+        final_text, t1_hits, t2_hits = engine.apply(original)
+        counter = {"tier1": t1_hits, "tier2": t2_hits}
     counts = {tier: int(n) for tier, n in counter.items()}
     total = sum(counts.values())
 
@@ -196,7 +196,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         return 0
 
     if args.check_only:
-        if counts.get("T1", 0):
+        if counts.get("tier1", 0):
             sys.stderr.write(
                 json.dumps(
                     {
