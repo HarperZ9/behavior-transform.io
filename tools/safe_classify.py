@@ -260,6 +260,7 @@ def _keyword_classify(text: str) -> dict:
             "raw_turn_head": text[:200],
             "category": "unclassified",
             "intent": "unspecified",
+            "tier": "unknown",
             "depth": "operational",
             "specificity": "generic",
             "keywords_hit": [],
