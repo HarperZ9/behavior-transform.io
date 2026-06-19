@@ -16,7 +16,7 @@ if str(_HERE) not in sys.path:
 from pressure_scan import (  # type: ignore[import-not-found]
     _is_whitelisted, _line_count, _pressure_label, _pressure_score, _scan_file, _walk,
 )
-from classifier_orig import _split_paragraphs  # noqa: F401
+from classifier._context import _split_paragraphs  # noqa: F401
 from classifier._policy import _active_policy  # noqa: F401
 from classifier._ci import fence_check  # noqa: F401
 
@@ -150,7 +150,7 @@ def unified_report(paths: list[Path], include_tier2: bool,
                    threshold: float, policy = None) -> dict:
     """Unified report: active policy + context fence + tree pipeline + drift."""
     from classifier._policy import _active_policy as get_active_policy
-    from classifier_orig import analyze_context
+    from classifier._context import analyze_context
 
     if policy is None:
         policy = get_active_policy()
@@ -185,7 +185,7 @@ def enforce_plan(paths: list[Path], include_tier2: bool,
       medium   — uncalibrated terms that may score in future
     """
     from classifier._policy import _active_policy as get_active_policy
-    from classifier_orig import ctx_fix
+    from classifier._context import ctx_fix
 
     if policy is None:
         policy = get_active_policy()

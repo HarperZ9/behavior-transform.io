@@ -731,6 +731,64 @@ def rephrase_source(
     return stats
 
 
+def inference_calibrate_cmd(
+    source: str,
+    output: "str | None",
+    strength: str,
+    include_vocab: bool,
+    include_tier2: bool,
+    dry_run: bool,
+) -> dict:
+    """Apply full calibration pipeline (vocabulary + inference) to a source.
+
+    Stages: vocabulary calibration (1+2, optional) then inference calibration (3).
+    Supports arbitrary content and arbitrary policies via CalibrationPipeline API.
+    """
+    calibrator = InferenceCalibrator(strength=strength)
+
+    if source == "-":
+        text   = sys.stdin.read()
+        origin = "<stdin>"
+    else:
+        try:
+            text   = Path(source).read_text(encoding="utf-8", errors="replace")
+            origin = source
+        except OSError as e:
+            return {"error": str(e)}
+
+    vocab_subs: dict = {}
+    if include_vocab:
+        text, vocab_counter = _calibrate_text(text, include_tier2)
+        vocab_subs = dict(vocab_counter)
+
+    calibrated, infer_stats = calibrator.calibrate(text)
+
+    if not dry_run:
+        if output:
+            try:
+                Path(output).write_text(calibrated, encoding="utf-8")
+            except OSError as e:
+                return {"error": str(e)}
+        else:
+            sys.stdout.write(calibrated)
+
+    _audit_write("inference.calibrate", {
+        "origin":           origin,
+        "strength":         strength,
+        "vocab_subs":       sum(int(v) for v in vocab_subs.values() if isinstance(v, int)),
+        "infer_transforms": infer_stats["transforms_applied"],
+        "dry_run":          dry_run,
+    })
+    return {
+        "origin":              origin,
+        "strength":            strength,
+        "vocab_substitutions": vocab_subs,
+        "inference_stats":     infer_stats,
+        "dry_run":             dry_run,
+        "output_path":         output,
+    }
+
+
 def emit_calibration_map(source: str, include_tier2: bool) -> dict:
     """Scan a source and emit the calibration child safety assessment for its content.
 
