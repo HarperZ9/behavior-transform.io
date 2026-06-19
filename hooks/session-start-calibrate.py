@@ -84,6 +84,26 @@ def _summary_line(out: str, keywords: tuple) -> str:
     return ""
 
 
+def _gate() -> bool:
+    """Return True (caller should sys.exit(0)) when mode is research/academic."""
+    import os
+    from pathlib import Path
+
+    bt = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
+    _tools = (
+        Path(bt)
+        if bt and Path(bt).is_dir()
+        else Path(__file__).resolve().parents[1] / "tools"
+    )
+    if str(_tools) not in sys.path:
+        sys.path.insert(0, str(_tools))
+    try:
+        from io_state import env_mode  # type: ignore[import]
+        return env_mode() == "off"
+    except Exception:
+        return False  # fail open
+
+
 def main() -> int:
     # --- Local direct path (see _warden_cleanroom.py) ---
     import os as _cr_os, sys as _cr_sys
@@ -94,6 +114,10 @@ def main() -> int:
             return 0
     except Exception:
         pass
+    
+    if _gate():
+        return 0
+    
     try:
         sys.stdin.read()
     except Exception:

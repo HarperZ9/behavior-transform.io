@@ -90,21 +90,34 @@ def _glob_is_cache(pattern: str, path: str) -> bool:
     return False
 
 
+def _gate() -> bool:
+    """Return True (caller should sys.exit(0)) when mode is research/academic."""
+    import os
+    from pathlib import Path
+
+    bt = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
+    _tools = (
+        Path(bt)
+        if bt and Path(bt).is_dir()
+        else Path(__file__).resolve().parents[1] / "tools"
+    )
+    if str(_tools) not in sys.path:
+        sys.path.insert(0, str(_tools))
+    try:
+        from io_state import env_mode  # type: ignore[import]
+        return env_mode() == "off"
+    except Exception:
+        return False  # fail open
+
+
 def main() -> int:
     try:
         data = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
         return 0
 
-    # --- Mode-controlled direct path ---
-    try:
-        if str(_IO_TOOLS) not in sys.path:
-            sys.path.insert(0, str(_IO_TOOLS))
-        from io_state import env_mode as _io_mode  # type: ignore[import]
-        if _io_mode() == "off":
-            return 0
-    except Exception:
-        pass
+    if _gate():
+        return 0
 
     # --- Local test direct path (see _warden_cleanroom.py) ---
     import os as _cr_os, sys as _cr_sys
