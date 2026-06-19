@@ -18,7 +18,13 @@ import os
 import sys
 from pathlib import Path
 
-_SAFE_FETCH_TOOL = "AGENTS/warden_shell/tools/safe_fetch.py"
+def _tools_path() -> Path:
+    bt = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
+    if bt and Path(bt).is_dir():
+        return Path(bt)
+    return Path(__file__).resolve().parents[1] / "tools"
+
+_SAFE_FETCH_TOOL = str(_tools_path() / "safe_fetch.py")
 
 WEBFETCH_GUIDANCE_MSG = """\
 Use the standard fetch layer for external content:

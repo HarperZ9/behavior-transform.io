@@ -32,9 +32,8 @@ Thread safety: the substitution table is built once and cached; safe for
 concurrent use inside async MCP servers.
 
 Performance: ~0.1 ms per 1 KB of text for the vocabulary pass. The full
-five-layer semantic modulation (context_modulate.py) is NOT run here by
-default because it involves a subprocess round-trip. Call
-calibrate_deep(text) to include it when latency allows.
+calibration is vocabulary-only. Call calibrate_deep(text) for any
+future extended-pass work.
 """
 from __future__ import annotations
 
@@ -52,7 +51,6 @@ from io_state import set_env_mode, split_io_toggles, transforms_enabled
 _TOOLS_ROOT = Path(__file__).resolve().parent
 _VOCAB_CANDIDATES = [
     _TOOLS_ROOT / "vocabulary_map.py",
-    _TOOLS_ROOT.parent / "warden_shell" / "tools" / "vocabulary_map.py",
 ]
 
 _lock   = threading.Lock()
@@ -296,41 +294,6 @@ def calibrate_batch(items: list[Any]) -> list[Any]:
     return result
 
 
-def calibrate_deep(text: str) -> str:
-    """
-    Full five-layer semantic modulation (vocabulary + semantic passes).
-
-    Spawns context_modulate.py as a subprocess — adds ~50–200 ms latency.
-    Use for tool responses containing extended prose or structured reports.
-    Falls back to vocabulary-only calibrate() if context_modulate is unavailable.
-    """
-    if not transforms_enabled():
-        return text
-    import subprocess as _sp
-    cm = _TOOLS_ROOT / "context_modulate.py"
-    if not cm.is_file():
-        return calibrate(text)
-    try:
-        r = _sp.run(
-            [sys.executable, str(cm), "--vocab-only"],
-            input=text.encode("utf-8", "replace"),
-            capture_output=True,
-            timeout=15,
-            cwd=str(Path.home()),
-        )
-        if r.returncode == 0:
-            return r.stdout.decode("utf-8", "replace")
-    except (_sp.SubprocessError, OSError):
-        pass
-    return calibrate(text)
-
-
-if __name__ == "__main__":
-    mode, _rest = split_io_toggles(sys.argv[1:])
-    if mode is not None:
-        set_env_mode(mode)
-    raw = sys.stdin.read()
-    calibrated, counts = calibrate_with_counts(raw)
-    sys.stdout.write(calibrated)
-    if counts:
-        sys.stderr.write(f"mcp_calibrate: substitutions={dict(counts)}\n")
+def calibrate_deep(text: str, server_name: str = "") -> str:
+    """Semantic modulation pass -- vocabulary calibration only."""
+    return calibrate(text, server_name=server_name)

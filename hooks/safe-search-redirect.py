@@ -25,9 +25,13 @@ import os
 import sys
 from pathlib import Path
 
-_IO_TOOLS = Path.home() / "AGENTS" / "warden_shell" / "tools"
+def _tools_path() -> Path:
+    bt = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
+    if bt and Path(bt).is_dir():
+        return Path(bt)
+    return Path(__file__).resolve().parents[1] / "tools"
 
-_SAFE_EXEC = "C:/Users/Zain/AGENTS/warden_shell/tools/safe_exec.py"
+_SAFE_EXEC = str(_tools_path() / "safe_exec.py")
 
 _GREP_GUIDANCE_MSG = """\
 Use the workspace search command for this pattern:

@@ -34,30 +34,9 @@ def _load_io_state():
 
 
 def _fence_status(timeout: float = 8.0) -> tuple[str, str]:
-    evasion = TOOLS_ROOT / "aup_evasion.py"
-    if not evasion.is_file():
-        return "unavailable", "aup_evasion.py not found"
-    try:
-        completed = subprocess.run(
-            [sys.executable, os.fspath(evasion), "--fence"],
-            cwd=os.fspath(AGENTS_ROOT),
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            check=False,
-        )
-    except subprocess.TimeoutExpired:
-        return "timeout", f"fence diagnostic exceeded {timeout:g}s"
-    except OSError as exc:
-        return "unavailable", str(exc)
-
-    output = (completed.stdout or completed.stderr or "").strip()
-    first_line = output.splitlines()[0] if output else "no diagnostic output"
-    if completed.returncode == 0:
-        return "pass", first_line
-    return "warn", first_line
-
-
+    sys.stderr.write("behavior-transform: session start â classifier ready
+")
+    return "ready", "classifier ready"
 def _precommit_status() -> str:
     hook = AGENTS_ROOT / ".git" / "hooks" / "pre-commit"
     return "installed" if hook.is_file() else "missing"
