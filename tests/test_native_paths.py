@@ -60,3 +60,12 @@ def test_no_warden_in_safe_read_hook():
     # warden_shell in IN_SCOPE_COMPONENTS (string data) is acceptable
     # but _tools_path() must not contain it as a path fallback
     assert "Path.home()" not in src  # no home-dir anchor
+
+def test_session_start_decoupled_from_warden():
+    src = _src("tools/session_start.py")
+    assert "AGENTS" not in src
+    assert "warden_shell" not in src
+    assert ".warden" not in src
+    assert "EMET" not in src
+    assert "WARDEN_ROOT" not in src
+    assert "AGENTS_ROOT" not in src
