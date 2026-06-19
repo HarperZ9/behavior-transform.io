@@ -9,7 +9,7 @@
 # To activate in Windows Terminal for all PS sessions, add the above line
 # to: $PROFILE (run notepad $PROFILE to edit)
 
-$WARDEN_TOOLS = "$env:USERPROFILE\AGENTS\warden_shell\tools"
+$WARDEN_TOOLS = (Resolve-Path (Join-Path $PSScriptRoot "..\tools")).Path
 $IO_CHANNEL   = "$WARDEN_TOOLS\io_channel.py"
 $IO_MODE      = "$WARDEN_TOOLS\io_mode.py"
 if (-not $env:WARDEN_IO_CHANNEL) {
