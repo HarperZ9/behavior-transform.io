@@ -23,6 +23,8 @@ def test_classify_scores_physical_security():
         "physical penetration vulnerability assessment for a data center"
     )
     assert result is not None
+    assert "result" in result
+    assert result["result"]["category"] == "PHYSICAL_SECURITY"
 
 
 def test_classify_result_has_expected_keys():
