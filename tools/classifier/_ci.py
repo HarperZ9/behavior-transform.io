@@ -12,6 +12,11 @@ from classifier._policy import _all_policies, _active_policy, _POLICY_PATH, Poli
 from classifier._context import analyze_context
 from pressure_scan import PROFILES  # type: ignore[import-not-found]
 
+# IMPORT-CYCLE GUARD: sibling imports of _inference / _refusal / _prompt / _analysis
+# MUST stay function-local (see probe_cmd / status_cmd below), never module-level.
+# _analysis imports fence_check from this module at top level, so hoisting any of
+# those sibling imports here would create a load-time cycle (_analysis -> _ci -> _analysis).
+
 _HOOK_MARKER = "# aup-evasion-gate"
 _HOOK_SCRIPT = """\
 #!/bin/sh
