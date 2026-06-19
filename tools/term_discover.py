@@ -6,10 +6,10 @@ could score against provider policy classifiers. Reports candidates
 for addition to the calibration map.
 
 Usage:
-    aup_discover.py [paths...]         Scan for uncalibrated terms
-    aup_discover.py --suggest          Output as Calibration() stubs
-    aup_discover.py --json             JSON output
-    aup_discover.py --min-count N      Only show terms seen >= N times (default 1)
+    term_discover.py [paths...]         Scan for uncalibrated terms
+    term_discover.py --suggest          Output as Calibration() stubs
+    term_discover.py --json             JSON output
+    term_discover.py --min-count N      Only show terms seen >= N times (default 1)
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-from aup_lint import _default_paths, _walk, _is_whitelisted  # type: ignore[import-not-found]
+from pressure_scan import _default_paths, _walk, _is_whitelisted  # type: ignore[import-not-found]
 from vocabulary_map import CALIBRATIONS, KEEP_TERMS  # type: ignore[import-not-found]
 
 SCAN_EXTENSIONS = {".py", ".pyi", ".md", ".rst", ".txt", ".sh", ".yaml", ".yml", ".toml"}
@@ -287,5 +287,5 @@ if __name__ == "__main__":
     try:
         sys.exit(main(sys.argv[1:]))
     except Exception as e:
-        sys.stderr.write(f"aup_discover: {e}\n")
+        sys.stderr.write(f"term_discover: {e}\n")
         sys.exit(1)

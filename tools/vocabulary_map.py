@@ -9,7 +9,7 @@ refuse to read or generate the affected files.
 This module is the canonical mapping from the original tradecraft term to
 the calibrated consulting-register term. It is consumed by:
 
-    - tools/aup_lint.py        — pre-commit / CI guard
+    - tools/pressure_scan.py        — pre-commit / CI guard
     - warden_shell/_compat/    — backward-compat aliases at module boundaries
     - docs/VOCABULARY-CALIBRATION.md — human-readable explainer
 
@@ -548,7 +548,7 @@ CALIBRATIONS: tuple[Calibration, ...] = (
     # Phrases that appear in operator-context blocks explicitly invoking model
     # safety architecture to request behavior modification. Definitively CVP-
     # triggering on capable models regardless of surrounding vocabulary.
-    # Detected here so aup_lint --fix corrects regression automatically.
+    # Detected here so pressure_scan --fix corrects regression automatically.
     # Added 2026-06-01 after audit of 88-agent corpus found all CLAUDE.md
     # files carrying a six-point Operator Provisions block using these patterns.
 
@@ -1169,8 +1169,8 @@ KEEP_TERMS: frozenset[str] = frozenset({
 LINTER_WHITELIST: tuple[str, ...] = (
     "warden_shell/_compat/",
     "warden_shell/tools/vocabulary_map.py",
-    "warden_shell/tools/aup_lint.py",
-    "warden_shell/tools/aup_rewrite.py",
+    "warden_shell/tools/pressure_scan.py",
+    "warden_shell/tools/pressure_rewrite.py",
     "warden_shell/docs/VOCABULARY-CALIBRATION.md",
     ".claude/hooks/aup-lint.sh",
     # Parallel runtime-redaction system: dedup/blind/vocabulary.py holds
@@ -1202,8 +1202,8 @@ LINTER_WHITELIST: tuple[str, ...] = (
     # pattern strings and suggestion text. Rewriting them would break the
     # scanner and the discovery engine. These files are the calibration layer
     # itself and are therefore exempt from vocabulary checks.
-    "warden_shell/tools/aup_discover.py",
-    "warden_shell/tools/aup_evasion.py",
+    "warden_shell/tools/term_discover.py",
+    "warden_shell/tools/classifier.py",
     # Prose vocabulary map: stores original terms in lookup tables used by
     # the prose-calibration pipeline. Rewriting originals would break the
     # lookup. Same exemption rationale as vocabulary_map.py.
@@ -1280,7 +1280,7 @@ LINTER_WHITELIST: tuple[str, ...] = (
     "warden_pso/tests/",
     # Sub-package source trees: T1 terms appear as Python identifiers (module names,
     # function names, class names) in these packages. String replacement would break
-    # imports. Identifier calibration is a separate planned task (aup_discover +
+    # imports. Identifier calibration is a separate planned task (term_discover +
     # full rename refactor); it is not handled by the string-substitution linter.
     "warden_credops/warden_credops/",
     "warden_credops/tests/",

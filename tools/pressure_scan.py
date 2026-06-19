@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""AUP vocabulary linter.
+"""Pressure scanner — vocabulary linter.
 
 Scans source files for tradecraft-register vocabulary that the Anthropic
 API safety filter scores. Tier 1 hits fail the lint; Tier 2 hits warn.
 
 Usage:
-    aup_lint.py [PATH ...]              # scan paths or default tree
-    aup_lint.py --json                  # JSON output for CI
-    aup_lint.py --no-tier2              # silence Tier 2 warnings
-    aup_lint.py --fail-tier2            # treat Tier 2 as failures
+    pressure_scan.py [PATH ...]              # scan paths or default tree
+    pressure_scan.py --json                  # JSON output for CI
+    pressure_scan.py --no-tier2              # silence Tier 2 warnings
+    pressure_scan.py --fail-tier2            # treat Tier 2 as failures
 
 Exit codes:
     0 — no Tier 1 hits (and no Tier 2 hits if --fail-tier2)
@@ -218,7 +218,7 @@ def _fix_file(path: Path, *, include_tier2: bool, dry_run: bool) -> tuple[Counte
     if changed and not dry_run:
         # Atomic write: tempfile in same dir + os.replace.
         fd, tmp_path_str = tempfile.mkstemp(
-            prefix=".aup_fix.",
+            prefix=".pressure_scan_fix.",
             suffix=".tmp",
             dir=str(path.parent),
         )
@@ -436,7 +436,7 @@ def main(argv: list[str]) -> int:
             print(json.dumps(report, indent=2))
         else:
             verb = "would change" if args.dry_run else "changed"
-            print(f"aup_lint --fix: {verb} {len(changed_files)} file(s); "
+            print(f"pressure_scan --fix: {verb} {len(changed_files)} file(s); "
                   f"substitutions={dict(total_counter)} total={sum(total_counter.values())}")
             for f in changed_files:
                 print(f"  {f}")

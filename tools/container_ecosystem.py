@@ -334,7 +334,7 @@ def _calibrate() -> int:
         except Exception as exc:
             print(f"  [mem] error: {exc}")
 
-    aup = _TOOLS / "aup_evasion.py"
+    aup = _TOOLS / "classifier.py"
     if aup.is_file():
         try:
             r = subprocess.run(
