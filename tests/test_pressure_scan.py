@@ -57,19 +57,28 @@ def test_tier2_suppressed_without_flag(tmp_path):
 
 
 def test_tier2_included_with_flag(tmp_path):
-    """when include_tier2=True, tier2 hits are not suppressed"""
+    # A non-alias tier2 term must register as a tier2-severity hit only when
+    # include_tier2=True. _scan_file skips no-op aliases (calibrated == original),
+    # so we pick a tier2 term that actually produces a hit.
     from vocabulary_map import by_severity
-    t2 = by_severity("tier2")
-    if not t2:
-        pytest.skip("no tier2 calibrations defined")
-    term = t2[0].original
-    f = tmp_path / "test.py"
-    f.write_text(f"# {term}\n")
-    hits_with = pressure_scan._scan_file(f, include_tier2=True)
-    hits_without = pressure_scan._scan_file(f, include_tier2=False)
-    # The key assertion: with flag off, no tier2 hits; with flag on, tier2 hits may appear
-    tier2_without = [h for h in hits_without if h["severity"] == "tier2"]
-    assert not tier2_without
+    real = [c for c in by_severity("tier2") if c.calibrated != c.original]
+    if not real:
+        pytest.skip("no non-alias tier2 calibrations defined")
+    chosen = None
+    for c in real:
+        probe = tmp_path / "probe.py"
+        probe.write_text(f"# {c.original}\n")
+        if any(h["severity"] == "tier2"
+               for h in pressure_scan._scan_file(probe, include_tier2=True)):
+            chosen = c.original
+            break
+    assert chosen is not None, "expected at least one tier2 term to register a hit"
+    f = tmp_path / "t.py"
+    f.write_text(f"# {chosen}\n")
+    assert any(h["severity"] == "tier2"
+               for h in pressure_scan._scan_file(f, include_tier2=True))
+    assert all(h["severity"] != "tier2"
+               for h in pressure_scan._scan_file(f, include_tier2=False))
 
 
 def test_scan_file_returns_list(tmp_path):
