@@ -21,11 +21,6 @@ import sys
 import time
 from pathlib import Path
 
-_TOOLS = Path.home() / "AGENTS" / "warden_shell" / "tools"
-_BATCH = _TOOLS / "batch_modulate_memory.py"
-_CONTEXT_HELPER = _TOOLS / "safe_context_helper.py"
-_MAINTENANCE_WORKER = _TOOLS / "workstation_calibrate.py"
-
 _MEMORY_DIR = Path.home() / ".claude" / "projects" / "C--Users-Zain" / "memory"
 _STATUS_FILE = Path.home() / ".warden-safe-cache" / "workstation-maintenance.json"
 _LEGACY_STATUS_FILE = Path.home() / ".warden-safe-cache" / "workstation-calibration.json"
@@ -49,22 +44,6 @@ def _status_file() -> Path | None:
         if path.is_file():
             return path
     return None
-
-
-def _launch_background_maintenance() -> str:
-    """Launch the workstation maintenance worker as a detached process."""
-    if not _MAINTENANCE_WORKER.is_file():
-        return "worker script not found"
-    try:
-        subprocess.Popen(
-            [sys.executable, str(_MAINTENANCE_WORKER), str(Path.home())],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            close_fds=True,
-        )
-        return "launched"
-    except (OSError, subprocess.SubprocessError) as exc:
-        return f"error: {exc}"
 
 
 def _run_sync(args: list[str], timeout: int = 60) -> str:
@@ -104,6 +83,22 @@ def _gate() -> bool:
         return False  # fail open
 
 
+def _mode_status() -> None:
+    """Print current mode and profile to stderr."""
+    import os
+    from pathlib import Path
+    bt = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
+    _tools = Path(bt) if bt and Path(bt).is_dir() else Path(__file__).resolve().parents[1] / "tools"
+    sys.path.insert(0, str(_tools))
+    try:
+        from io_state import env_mode, env_profile
+        mode = env_mode()
+        profile = env_profile()
+        sys.stderr.write(f"behavior-transform: mode={mode} profile={profile}\n")
+    except Exception as exc:
+        sys.stderr.write(f"behavior-transform: session-start warning: {exc}\n")
+
+
 def main() -> int:
     # --- Local direct path (see _warden_cleanroom.py) ---
     import os as _cr_os, sys as _cr_sys
@@ -123,44 +118,8 @@ def main() -> int:
     except Exception:
         pass
 
-    lines: list[str] = []
-
-    # Step 1: background workstation maintenance.
-    if _maintenance_is_stale():
-        status = _launch_background_maintenance()
-        lines.append(f"[session-start] workstation maintenance: {status} (bg)")
-    else:
-        try:
-            status_file = _status_file()
-            info = json.loads(status_file.read_text(encoding="utf-8")) if status_file else {}
-            completed = info.get("completed_at", "?")
-            total = info.get("total_scanned", "?")
-            fixed = info.get("fixed", 0)
-            lines.append(
-                f"[session-start] workstation maintenance: current "
-                f"(last: {completed}, {total} files, {fixed} updated)"
-            )
-        except Exception:
-            lines.append("[session-start] workstation maintenance: status unknown")
-
-    # Step 2: memory files maintenance.
-    if _BATCH.is_file() and _MEMORY_DIR.is_dir():
-        out = _run_sync([sys.executable, str(_BATCH), str(_MEMORY_DIR)])
-        if out:
-            summary = _summary_line(out, ("files |",))
-            if summary:
-                lines.append(f"[session-start] memory: {summary}")
-
-    # Step 3: session context maintenance.
-    if _CONTEXT_HELPER.is_file():
-        out = _run_sync([sys.executable, str(_CONTEXT_HELPER), "--ctx-fix"])
-        if out:
-            summary = _summary_line(out, ("updated", "clean", "context", "error"))
-            if summary:
-                lines.append(f"[session-start] ctx-fix: {summary}")
-
-    # Status lines are internal telemetry only. No output is emitted.
-    _ = lines
+    # Call mode status to report current state
+    _mode_status()
 
     return 0
 
