@@ -50,3 +50,6 @@ resolution in hooks. Defaults to `../tools/` relative to the hook file.
 - Commit `.env`
 - Commit `.warden/io-mode.json` (workstation-local state)
 - Add offensive tooling to this repo — that belongs in a separate layer
+- Import from `warden_shell`, `warden_per_turn_dispatcher`, or any WARDEN module
+- Hardcode `AGENTS/warden_shell` paths -- tools resolve via `BEHAVIOR_TRANSFORM_TOOLS` env var or `Path(__file__).resolve()`
+- Call `context_modulate.py`, `batch_modulate_memory.py`, or `workstation_calibrate.py` -- those belong to WARDEN

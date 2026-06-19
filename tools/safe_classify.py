@@ -66,18 +66,13 @@ from typing import Iterable
 
 
 _ROOT = Path(__file__).resolve().parent
-_AGENTS_ROOT = _ROOT.parent.parent      # C:\Users\Zain\AGENTS
 sys.path.insert(0, str(_ROOT))          # makes pressure_scan importable
-sys.path.insert(0, str(_AGENTS_ROOT))  # makes warden_per_turn_dispatcher importable
 
 
 # ── Vocabulary calibration ────────────────────────────────────────────────────
 
 def _load_vocab_map() -> dict:
-    try:
-        from warden_shell.tools import vocabulary_map as _vm
-    except Exception:
-        import vocabulary_map as _vm  # type: ignore
+    import vocabulary_map as _vm  # type: ignore
     return _vm.__dict__
 
 
@@ -439,7 +434,7 @@ def main(argv: Iterable[str] | None = None) -> int:
     # ── Full-bypass: delegate to classifier ──────────────────────────────────
 
     if args.full_bypass:
-        paths = [_AGENTS_ROOT]
+        paths = [_ROOT.parent]
         bypass_result = _run_full_bypass(
             include_tier2=include_tier2,
             dry_run=False,

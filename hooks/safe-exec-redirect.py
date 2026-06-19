@@ -139,19 +139,11 @@ _ALLOW_PATTERNS: list[re.Pattern] = [
 ]
 
 _EXEC_GUIDANCE_MSG = (
-    "Use the workspace command channel for this command:
-
-"
-    "    python " + _SAFE_EXEC + " -- {cmd_short}
-
-"
-    "    # With stderr:
-"
-    "    python " + _SAFE_EXEC + " --include-stderr -- {cmd_short}
-
-"
-    "For direct native inspection, ask the operator to enable research or academic mode.
-"
+    "Use the workspace command channel for this command:\n\n"
+    "    python " + _SAFE_EXEC + " -- {cmd_short}\n\n"
+    "    # With stderr:\n"
+    "    python " + _SAFE_EXEC + " --include-stderr -- {cmd_short}\n\n"
+    "For direct native inspection, ask the operator to enable research or academic mode.\n"
 )
 
 
