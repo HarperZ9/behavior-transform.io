@@ -29,7 +29,6 @@ from pathlib import Path
 
 _TOOLS_CANDIDATES = (
     Path(__file__).resolve().parents[1] / "tools",
-    Path.home() / "AGENTS" / "warden_shell" / "tools",
 )
 for _tools_root in _TOOLS_CANDIDATES:
     if _tools_root.is_dir() and str(_tools_root) not in sys.path:

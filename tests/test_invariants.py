@@ -17,6 +17,13 @@ def _grep(pattern: str) -> list[str]:
         if "test_invariants" not in l and "test_native_paths" not in l
     ]
 
+
+def _grep_regex(pattern: str) -> list[str]:
+    r = subprocess.run(
+        ["git", "grep", "-Prn", "--", pattern, ":!docs/**", ":!tests/**", ":!CLAUDE.md"],
+        cwd=str(REPO), capture_output=True, text=True,
+    )
+    return [l for l in r.stdout.splitlines() if "test_invariants" not in l]
 def test_no_warden_shell_imports():
     hits = _grep("from warden_shell") + _grep("import warden_shell")
     assert hits == [], "\n".join(hits)

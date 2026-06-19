@@ -19,19 +19,23 @@ PostToolUse:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
-_HOME_TOOLS = Path.home() / "AGENTS" / "warden_shell" / "tools"
-_CWD_TOOLS  = Path("AGENTS") / "warden_shell" / "tools"
+
+def _tools_path() -> Path:
+    bt = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
+    if bt and Path(bt).is_dir():
+        return Path(bt)
+    return Path(__file__).resolve().parents[1] / "tools"
 
 
 def _tool(name: str) -> Path | None:
-    for base in (_HOME_TOOLS, _CWD_TOOLS):
-        p = base / name
-        if p.is_file():
-            return p
+    p = _tools_path() / name
+    if p.is_file():
+        return p
     return None
 
 
