@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 :: warden-profile.cmd - IO Channel shell integration for Windows CMD
 ::
 :: Architecture: [A -> io_channel.py -> CMD shell -> io_channel.py -> B]
@@ -9,7 +9,7 @@
 :: Or call manually at the start of a CMD session:
 ::   call %USERPROFILE%\AGENTS\warden_shell\tools\warden-profile.cmd
 
-set WARDEN_TOOLS=%USERPROFILE%\AGENTS\warden_shell\tools
+set WARDEN_TOOLS=%~dp0..\tools
 set IO_CHANNEL=%WARDEN_TOOLS%\io_channel.py
 set IO_MODE=%WARDEN_TOOLS%\io_mode.py
 if "%WARDEN_IO_CHANNEL%"=="" for /f %%i in ('python "%IO_MODE%" status --mode-only') do set WARDEN_IO_CHANNEL=%%i
@@ -35,3 +35,4 @@ echo WARDEN IO Channel loaded. (CMD, %WARDEN_IO_CHANNEL%)
 
 :: --- Container ecosystem entry point ----------------------------------------
 doskey container=python "%WARDEN_TOOLS%\container_ecosystem.py" $*
+

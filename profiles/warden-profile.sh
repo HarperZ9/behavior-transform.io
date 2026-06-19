@@ -10,7 +10,7 @@
 # To activate in Zsh, add to ~/.zshrc:
 #   source ~/AGENTS/warden_shell/tools/warden-profile.sh
 
-WARDEN_TOOLS="${HOME}/AGENTS/warden_shell/tools"
+WARDEN_TOOLS="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/tools"
 IO_CHANNEL="${WARDEN_TOOLS}/io_channel.py"
 IO_MODE="${WARDEN_TOOLS}/io_mode.py"
 : "${WARDEN_IO_CHANNEL:=$(python "${IO_MODE}" status --mode-only 2>/dev/null || printf on)}"
