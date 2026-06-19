@@ -27,7 +27,7 @@ Channels
   SEARCH       Grep/Glob results -> inference context               safe_exec (grep)
   MCP_OUT      MCP server responses -> inference context            mcp_calibrate.py
   MCP_PROXY    External MCP stdio servers -> inference context      warden_mcp_proxy.py
-  SESSION      auto-loaded context at session start                 context_modulate.py
+  SESSION      auto-loaded context at session start                 safe_context_helper.py
 
 Hook enforcement (PreToolUse / PostToolUse)
 -------------------------------------------
@@ -159,7 +159,7 @@ CHANNELS: list[dict] = [
     {
         "name":    "SESSION",
         "desc":    "Auto-loaded context (CLAUDE.md, MEMORY.md) at session start",
-        "handler": "context_modulate.py",
+        "handler": "safe_context_helper.py",
         "hook":    "session-start-calibrate.py",
         "mode":    "enforced",
     },
@@ -214,9 +214,9 @@ def _status() -> int:
     _check_hooks(verbose=True)
     print()
     vm = _TOOLS / "vocabulary_map.py"
-    cm = _TOOLS / "context_modulate.py"
+    cm = _TOOLS / "safe_context_helper.py"
     print(f"vocabulary_map   : {_OK + ' present' if vm.is_file() else _FAIL + ' MISSING'}")
-    print(f"context_modulate : {_OK + ' present' if cm.is_file() else _FAIL + ' MISSING'}")
+    print(f"safe_context_helper: {_OK + ' present' if cm.is_file() else _FAIL + ' MISSING'}")
     print()
     print(f"  {_OK} Enforced  -- PreToolUse hook blocks native path; routes through calibrated handler")
     print(f"  {_PART} Partial   -- high-output patterns redirected; low-risk commands pass through")
@@ -319,20 +319,6 @@ def _calibrate() -> int:
             print(f"  [bg] error: {exc}")
     else:
         print("  [bg] workstation_calibrate.py not found -- skipped")
-
-    mem = _TOOLS / "batch_modulate_memory.py"
-    mdir = Path.home() / ".claude" / "projects" / "C--Users-Zain" / "memory"
-    if mem.is_file() and mdir.is_dir():
-        try:
-            r = subprocess.run(
-                [sys.executable, str(mem), str(mdir)],
-                capture_output=True, timeout=60, cwd=str(Path.home()),
-            )
-            out = r.stdout.decode("utf-8", "replace").strip()
-            summary = out.splitlines()[-1] if out else "done"
-            print(f"  [mem] {summary}")
-        except Exception as exc:
-            print(f"  [mem] error: {exc}")
 
     aup = _TOOLS / "classifier.py"
     if aup.is_file():
