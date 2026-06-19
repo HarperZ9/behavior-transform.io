@@ -3,3 +3,9 @@
 from classifier_orig import *  # noqa: F401, F403
 from classifier_orig import main  # noqa: F401
 from classifier._audit import _AUDIT_PATH, _audit_write, audit_log_cmd  # noqa: F401
+from classifier._policy import (  # noqa: F401
+    PolicyDef, _load_policy_def, _active_policy,
+    policy_list_cmd, policy_show_cmd, policy_activate_cmd,
+    policy_save_cmd, policy_delete_cmd, policy_diff_cmd,
+    policy_export_cmd, policy_import_cmd,
+)
