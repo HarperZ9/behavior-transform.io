@@ -27,3 +27,7 @@ from classifier._inference import (  # noqa: F401
 from classifier._refusal import (  # noqa: F401
     RefusalModulator, refusal_probability, _refusal_label, refusal_manage_cmd,
 )
+from classifier._prompt import (  # noqa: F401
+    _parse_prompt, PromptModulator, prompt_modulate_cmd, prompt_session_cmd,
+    FamilyProfile, FamilyModulator, family_list_cmd,
+)
