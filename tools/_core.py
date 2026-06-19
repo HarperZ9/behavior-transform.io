@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 import re
@@ -36,10 +36,10 @@ def _compile_patterns(cals: tuple) -> tuple:
     patterns = []
     for c in cals:
         if c.scope in ("identifier", "module-name"):
-            patterns.append(re.compile(rf"{re.escape(c.original)}"))
+            patterns.append(re.compile(rf"\b{re.escape(c.original)}\b"))
         else:
             patterns.append(
-                re.compile(rf"{re.escape(c.original)}", re.IGNORECASE)
+                re.compile(rf"\b{re.escape(c.original)}\b", re.IGNORECASE)
             )
     return tuple(patterns)
 
@@ -95,6 +95,12 @@ class CalibrationEngine:
 
 
 def build_engine(include_tier2: bool = True) -> CalibrationEngine:
+    """Return the module-level CalibrationEngine singleton.
+
+    The first call builds and caches the engine with the given include_tier2
+    value; subsequent calls return the cached instance regardless of the
+    argument. All callers in this codebase use the default (True).
+    """
     global _ENGINE
     if _ENGINE is None:
         _ENGINE = CalibrationEngine.build(include_tier2=include_tier2)
