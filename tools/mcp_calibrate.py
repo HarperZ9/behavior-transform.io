@@ -1,21 +1,21 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
-mcp_calibrate — MCP server output calibration helper.
+mcp_calibrate â€” MCP server output calibration helper.
 
 Closes the MCP_OUT gap in the container ecosystem. Import this module in
 any WARDEN MCP server and call calibrate() on response text before
 returning it to the harness. The model then receives calibrated consulting-
-register language — consistent with every other channel in the ecosystem.
+register language â€” consistent with every other channel in the ecosystem.
 
 Architecture note
-─────────────────
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 MCP tool responses are the one channel where PreToolUse hooks cannot
 intercept (the tool runs server-side before the hook fires). PostToolUse
 fires after the fact but cannot modify the response the model sees.
-Calibration must happen at the source — inside the MCP server itself.
+Calibration must happen at the source â€” inside the MCP server itself.
 
 Usage (in each MCP server's tool handler)
-──────────────────────────────────────────
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     from mcp_calibrate import calibrate, calibrate_response
 
     # Plain text response:
@@ -149,7 +149,7 @@ TEXT_KEYS: frozenset[str] = frozenset({
     # Original set
     "content", "text", "output", "result",
     "message", "description", "summary", "body",
-    # Extended — richer MCP response context
+    # Extended â€” richer MCP response context
     "data", "response", "value", "error", "details", "info", "raw",
     "stdout", "stderr", "metadata", "context", "title",
     "label", "annotation", "note", "reason", "cause", "hint",

@@ -75,17 +75,10 @@ CLAUDE_INFRA_SUBDIRS = {
 
 def _tools_path() -> Path:
     """Resolve the behavior-transform tools directory."""
-    override = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
-    if override:
-        p = Path(override)
-        if p.is_dir():
-            return p
-    here = Path(__file__).resolve().parent
-    candidate = here.parent / "tools"
-    if candidate.is_dir():
-        return candidate
-    # Legacy fallback
-    return Path.home() / "AGENTS" / "warden_shell" / "tools"
+    bt = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
+    if bt and Path(bt).is_dir():
+        return Path(bt)
+    return Path(__file__).resolve().parents[1] / "tools"
 
 
 def _tools_cmd(name: str) -> str:
