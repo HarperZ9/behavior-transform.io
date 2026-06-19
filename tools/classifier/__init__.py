@@ -15,3 +15,7 @@ from classifier._analysis import (  # noqa: F401
     pipeline_report, unified_report, enforce_plan,
     modulate_report, window_report, compound_report,
 )
+from classifier._context import (  # noqa: F401
+    _context_files, _split_paragraphs, analyze_context,
+    annotate_file, validate_file, ctx_fix,
+)
