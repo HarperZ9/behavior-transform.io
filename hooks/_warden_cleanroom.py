@@ -8,15 +8,7 @@ This governs ONLY local routing/session hooks:
 It does NOT govern genuine safety hooks (block-secrets, check-branch,
 verify-no-secrets, lint-on-save) - those stay armed in every state.
 
-Resolution order for cleanroom_active(hook_name) - first decisive match wins:
-    1. config ~/.claude/cleanroom.json  "hooks"[hook_name]  (per-hook override)
-    2. env WARDEN_CLEANROOM  truthy/falsey                  (session master)
-    3. sentinel file ~/.claude/.warden-cleanroom present    -> active
-    4. config ~/.claude/cleanroom.json  "active"            (persisted master)
-    5. default                                              -> inactive (armed)
-
-Active   -> the hook returns on its direct path.
-Inactive -> the hook uses normal handling.
+Mode authority is now unified through io_state.env_mode().
 """
 from __future__ import annotations
 
@@ -72,30 +64,29 @@ def _gap_state(cfg: dict) -> bool:
 
 
 def cleanroom_active(hook_name: str = "") -> tuple[bool, bool]:
-    """Return (active, tag_required).
+    """Return (armed, tag_required) derived from io_state mode authority.
 
-    active       -- True = hook uses its direct path
-    tag_required -- True = active + GAP mode; write accountability journal entry
+    Both values match — armed when mode is 'on', disarmed when 'off'.
+    write_gap_journal() remains for GAP-category audit trail.
     """
-    cfg = load_config()
-    # 1. per-hook override (most specific)
-    hooks = cfg.get("hooks")
-    if hook_name and isinstance(hooks, dict) and hook_name in hooks:
-        active = bool(hooks[hook_name])
-        return active, active and _gap_state(cfg)
-    # 2. env master
-    env = _env_state()
-    if env is not None:
-        return env, env and _gap_state(cfg)
-    # 3. sentinel file
-    if SENTINEL.exists():
-        return True, _gap_state(cfg)
-    # 4. persisted master
-    if "active" in cfg:
-        active = bool(cfg["active"])
-        return active, active and _gap_state(cfg)
-    # 5. default: armed (SEAL mode)
-    return False, False
+    import os
+    import sys
+    from pathlib import Path
+
+    bt = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
+    _tools = (
+        Path(bt)
+        if bt and Path(bt).is_dir()
+        else Path(__file__).resolve().parents[1] / "tools"
+    )
+    if str(_tools) not in sys.path:
+        sys.path.insert(0, str(_tools))
+    try:
+        from io_state import env_mode  # type: ignore[import]
+        armed = env_mode() == "on"
+        return armed, armed
+    except Exception:
+        return True, True  # fail closed
 
 
 def write_gap_journal(hook_name: str, data: dict) -> None:
