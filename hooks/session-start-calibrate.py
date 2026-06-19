@@ -89,7 +89,8 @@ def _mode_status() -> None:
     from pathlib import Path
     bt = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
     _tools = Path(bt) if bt and Path(bt).is_dir() else Path(__file__).resolve().parents[1] / "tools"
-    sys.path.insert(0, str(_tools))
+    if str(_tools) not in sys.path:
+        sys.path.insert(0, str(_tools))
     try:
         from io_state import env_mode, env_profile
         mode = env_mode()

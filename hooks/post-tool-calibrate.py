@@ -22,30 +22,11 @@ PostToolUse payload shape:
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
 from pathlib import Path
 
 # Cap captured output to avoid overwhelming local handling.
 _MAX_CHARS = 40_000
-
-
-def _extract_text(tool_response) -> str:
-    if tool_response is None:
-        return ""
-    if isinstance(tool_response, str):
-        return tool_response
-    if isinstance(tool_response, (list, tuple)):
-        return "\n".join(str(item) for item in tool_response)
-    if isinstance(tool_response, dict):
-        for key in ("output", "content", "stdout", "text", "result"):
-            val = tool_response.get(key)
-            if isinstance(val, str):
-                return val
-            if isinstance(val, list):
-                return "\n".join(str(v) for v in val)
-        return json.dumps(tool_response, ensure_ascii=False)
-    return str(tool_response)
 
 
 def _gate() -> bool:
@@ -74,7 +55,8 @@ def _maybe_journal(data: dict) -> None:
     from pathlib import Path
     bt = os.environ.get("BEHAVIOR_TRANSFORM_TOOLS", "").strip()
     _tools = Path(bt) if bt and Path(bt).is_dir() else Path(__file__).resolve().parents[1] / "tools"
-    sys.path.insert(0, str(_tools))
+    if str(_tools) not in sys.path:
+        sys.path.insert(0, str(_tools))
     try:
         from _warden_cleanroom import write_gap_journal
         if data.get("tool_response"):
