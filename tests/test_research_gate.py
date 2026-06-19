@@ -45,3 +45,17 @@ def test_all_hooks_pass_through_in_research_mode():
         result = _run(hook, payload, "off")
         assert result.returncode == 0, f"{hook} returned {result.returncode} in research mode"
         assert result.stderr == "", f"{hook} wrote stderr in research mode: {result.stderr!r}"
+
+
+def test_session_start_has_no_warden_tool_calls():
+    src = (HOOKS / "session-start-calibrate.py").read_text(encoding="utf-8")
+    assert "batch_modulate_memory" not in src
+    assert "workstation_calibrate" not in src
+    assert "warden_shell" not in src
+    assert "AGENTS" not in src
+
+
+def test_post_tool_calibrate_has_no_context_modulate():
+    src = (HOOKS / "post-tool-calibrate.py").read_text(encoding="utf-8")
+    assert "context_modulate" not in src
+    assert "AGENTS" not in src
