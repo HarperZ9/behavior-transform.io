@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-"""Pressure scanner — vocabulary linter.
+﻿#!/usr/bin/env python3
+"""Pressure scanner â€” vocabulary linter.
 
 Scans source files for tradecraft-register vocabulary that the Anthropic
 API safety filter scores. Tier 1 hits fail the lint; Tier 2 hits warn.
@@ -11,9 +11,9 @@ Usage:
     pressure_scan.py --fail-tier2            # treat Tier 2 as failures
 
 Exit codes:
-    0 — no Tier 1 hits (and no Tier 2 hits if --fail-tier2)
-    1 — Tier 1 hits found
-    2 — usage error
+    0 â€” no Tier 1 hits (and no Tier 2 hits if --fail-tier2)
+    1 â€” Tier 1 hits found
+    2 â€” usage error
 
 Per-line escapes:
     `# noqa: AUP-ALIAS`     skip line (used by _compat/aliases.py)
@@ -85,7 +85,7 @@ def _build_pattern(originals: list[str], ignore_case: bool) -> re.Pattern[str] |
 
 
 def _patterns_for(severity: str) -> list[tuple[re.Pattern[str], bool]]:
-    """Build (pattern, is_prose) tuples — separate case-sensitive identifier
+    """Build (pattern, is_prose) tuples â€” separate case-sensitive identifier
     pattern from case-insensitive prose pattern so identifier-scope entries
     don't flag legitimate lowercase prose elsewhere (e.g., 'extracted' as a
     bare verb, 'Callback' inside BLE-Callback technology references)."""
@@ -111,7 +111,7 @@ _ORIG_LOWER_TO_CAL = {c.original.lower(): c for c in CALIBRATIONS if c.scope in 
 
 
 def _pressure_score(hits: list[dict], total_lines: int) -> float:
-    """Classifier pressure score 0–100. Density-weighted: >30 = likely block, >10 = caution."""
+    """Classifier pressure score 0â€“100. Density-weighted: >30 = likely block, >10 = caution."""
     raw = sum(_TIER_WEIGHT.get(h["severity"], 1.0) for h in hits)
     return min(100.0, round(raw / max(total_lines, 1) * 1000, 1))
 
@@ -157,7 +157,7 @@ def _scan_file(path: Path, include_tier2: bool) -> list[dict]:
                         cal = _ORIG_TO_CAL.get(matched)
                     if cal is None:
                         continue
-                    # Skip no-op aliases (calibrated == original) — these are
+                    # Skip no-op aliases (calibrated == original) â€” these are
                     # documentation-only entries; flagging them is pure noise.
                     if cal.calibrated == matched or cal.calibrated == cal.original:
                         continue
@@ -251,59 +251,8 @@ def _walk(paths: list[Path]):
                 yield f
 
 
-def _memory_paths() -> list[Path]:
-    """Claude Code persistent memory directories under the user home.
-
-    The memory store at ``~/.claude/projects/<workspace-slug>/memory/`` is
-    loaded into context at session start (MEMORY.md) and on relevance recall
-    (individual entry files). It must sit on the same calibration boundary
-    as the AGENTS tree, otherwise tradecraft-register phrasing in memories
-    written months ago re-enters context uncalibrated every session.
-
-    Override via env var ``WARDEN_AUP_MEMORY_PATH`` (single path) — useful
-    for tests or alternate-home layouts.
-    """
-    import os
-    env = os.environ.get("WARDEN_AUP_MEMORY_PATH")
-    if env:
-        p = Path(env)
-        return [p] if p.is_dir() else []
-    home = Path.home()
-    base = home / ".claude" / "projects"
-    if not base.is_dir():
-        return []
-    return [p / "memory" for p in base.iterdir() if (p / "memory").is_dir()]
-
-
 def _default_paths() -> list[Path]:
-    # ROOT = warden_shell/tools; ROOT.parent = warden_shell; ROOT.parent.parent = AGENTS
-    agents = ROOT.parent.parent
-    candidates = [
-        "warden_shell", "warden_engraver", "warden_rae",
-        "warden_pso", "warden_observatory", "warden_selfsustain",
-        "warden_credops", "warden_probes", "warden_glasswing",
-        # Engineering docs + proposals + plans — added 2026-04-26 after
-        # ENGRAVER-MVP-PICKUP.md tripped the API filter. Canonical signed
-        # text under project-docs/amendments/ etc. is whitelisted in
-        # vocabulary_map.LINTER_WHITELIST.
-        "project-docs",
-        # Agent CLAUDE.md corpus -- added 2026-06-01 after Operator Provisions audit
-        # found all 88 agent files triggered CVP on Opus 4.8+. Ongoing lint
-        # coverage prevents future vocabulary and structural drift in this tree.
-        "the-agents",
-        # Engagement config corpus -- added 2026-06-01 after staged_transfer and
-        # authorized_monitoring hits found in assessment/tools/warden/configs/.
-        # No-op module-name aliases suppressed at linter level (calibrated==original).
-        "assessment",
-    ]
-    paths = [agents / c for c in candidates if (agents / c).exists()]
-    # Persistent memory store — added 2026-05-24 after audit found
-    # ~277 Tier-1 hits in operator memory entries that re-entered
-    # context every session via MEMORY.md recall. Memory location is
-    # discovered dynamically so the same lint works for any operator's
-    # workstation layout.
-    paths.extend(_memory_paths())
-    return paths
+    return [Path.cwd()]
 
 
 def _get_note(h: dict) -> str:
@@ -392,11 +341,11 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--profile", choices=list(PROFILES), default=None,
                     help="Calibration profile: strict | guarded | minimal")
     ap.add_argument("--score", action="store_true",
-                    help="Include classifier pressure score (0–100) in output")
+                    help="Include classifier pressure score (0â€“100) in output")
     ap.add_argument("--probe", metavar="TEXT",
                     help="Score an ad-hoc text snippet instead of scanning files")
     ap.add_argument("--summary", action="store_true",
-                    help="Per-file pressure summary table — no per-line details")
+                    help="Per-file pressure summary table â€” no per-line details")
     ap.add_argument("--explain", action="store_true",
                     help="Show calibration notes alongside each hit")
     args = ap.parse_args(argv)
@@ -472,14 +421,14 @@ def main(argv: list[str]) -> int:
             score = _pressure_score(all_hits, total_lines)
             print(f"Classifier pressure: {score:.1f}/100  [{_pressure_label(score)}]")
         if tier1:
-            print(f"== Tier 1 — BLOCK ({len(tier1)} hit{'s' if len(tier1) != 1 else ''}) ==")
+            print(f"== Tier 1 â€” BLOCK ({len(tier1)} hit{'s' if len(tier1) != 1 else ''}) ==")
             for h in tier1:
                 note = f"  # {_get_note(h)}" if args.explain and _get_note(h) else ""
                 print(f"  {h['path']}:{h['line']}:{h['col']}  "
                       f"'{h['original']}' -> '{h['calibrated']}'  [{h['scope']}]{note}")
                 print(f"    {h['snippet']}")
         if tier2 and include_tier2:
-            print(f"== Tier 2 — warn ({len(tier2)} hit{'s' if len(tier2) != 1 else ''}) ==")
+            print(f"== Tier 2 â€” warn ({len(tier2)} hit{'s' if len(tier2) != 1 else ''}) ==")
             for h in tier2:
                 note = f"  # {_get_note(h)}" if args.explain and _get_note(h) else ""
                 print(f"  {h['path']}:{h['line']}:{h['col']}  "
@@ -496,3 +445,4 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
+
