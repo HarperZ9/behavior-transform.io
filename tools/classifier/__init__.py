@@ -9,3 +9,4 @@ from classifier._policy import (  # noqa: F401
     policy_save_cmd, policy_delete_cmd, policy_diff_cmd,
     policy_export_cmd, policy_import_cmd,
 )
+from classifier._ci import fence_check, probe_cmd, status_cmd, hook_install, hook_remove  # noqa: F401
