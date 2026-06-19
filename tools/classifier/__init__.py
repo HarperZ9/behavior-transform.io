@@ -10,3 +10,8 @@ from classifier._policy import (  # noqa: F401
     policy_export_cmd, policy_import_cmd,
 )
 from classifier._ci import fence_check, probe_cmd, status_cmd, hook_install, hook_remove  # noqa: F401
+from classifier._analysis import (  # noqa: F401
+    _BASELINE_PATH, budget_summary, save_baseline, drift_report,
+    pipeline_report, unified_report, enforce_plan,
+    modulate_report, window_report, compound_report,
+)
