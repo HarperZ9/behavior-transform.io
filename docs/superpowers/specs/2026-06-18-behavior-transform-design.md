@@ -1,4 +1,4 @@
-﻿# behavior-transform.io — Design Spec
+﻿# behavior-transform.io -- Design Spec
 **Date:** 2026-06-18
 **Status:** Approved
 
@@ -18,14 +18,14 @@ Concretely: pressure scoring (0-100, density-weighted), discovery-driven vocabul
 
 ---
 
-## Section 1 — Mode Authority (Single Source of Truth)
+## Section 1 -- Mode Authority (Single Source of Truth)
 
 ### Problem
 
 Two independent state systems exist and can desynchronize:
 
-1. ~/.warden/io-mode.json + WARDEN_IO_CHANNEL env — checked by io_state.env_mode()
-2. ~/.claude/cleanroom.json + WARDEN_CLEANROOM env + sentinel file — checked by _warden_cleanroom.cleanroom_active()
+1. ~/.warden/io-mode.json + WARDEN_IO_CHANNEL env -- checked by io_state.env_mode()
+2. ~/.claude/cleanroom.json + WARDEN_CLEANROOM env + sentinel file -- checked by _warden_cleanroom.cleanroom_active()
 
 Different hooks check different systems. When WARDEN_CLEANROOM=off is set independently of io-mode.json, hooks diverge. This is the root cause of research-mode word-modulation bleed.
 
@@ -34,15 +34,15 @@ Different hooks check different systems. When WARDEN_CLEANROOM=off is set indepe
 Single authority: io_state.env_mode()
 
 Resolution order (highest to lowest):
-1. WARDEN_IO_CHANNEL env var — per-process override
-2. ~/.warden/io-mode.json — persisted workstation state
+1. WARDEN_IO_CHANNEL env var -- per-process override
+2. ~/.warden/io-mode.json -- persisted workstation state
 3. Default: "on" (ops)
 
 _warden_cleanroom.cleanroom_active() is rewritten to derive from io_state. ~/.claude/cleanroom.json is kept as a derived mirror written atomically by io_mode._sync_cleanroom_state() on every mode change. write_gap_journal() remains (audit trail, not mode state). The sentinel file ~/.claude/.warden-cleanroom is removed. WARDEN_CLEANROOM env var is read during migration cutover (for any existing scripts that set it), then removed once all callers are updated.
 
 ---
 
-## Section 2 — Research Mode Hard Gate
+## Section 2 -- Research Mode Hard Gate
 
 ### Problem
 
@@ -50,7 +50,7 @@ _warden_cleanroom.cleanroom_active() is rewritten to derive from io_state. ~/.cl
 
 ### Solution
 
-Every hook — after JSON parse, before any calibration import — runs:
+Every hook -- after JSON parse, before any calibration import -- runs:
 
     def _gate() -> bool:
         tools = Path(__file__).resolve().parents[1] / "tools"
@@ -67,7 +67,7 @@ Exception: block-secrets.py is always armed regardless of mode.
 
 ---
 
-## Section 3 — Ops Mode Bidirectional Pipeline
+## Section 3 -- Ops Mode Bidirectional Pipeline
 
 ### Architecture
 
@@ -94,7 +94,7 @@ mcp_calibrate.py calibrates both JSON-RPC requests (outbound to MCP server) and 
 
 ---
 
-## Section 4 — Monolith Elimination
+## Section 4 -- Monolith Elimination
 
 ### Root Cause
 
@@ -129,7 +129,7 @@ hooks/session-start-calibrate.py
   Replace with mode status report + hook coverage check
 
 hooks/post-tool-calibrate.py
-  Remove _CONTEXT_MODULATE / context_modulate.py; PostToolUse hooks cannot modify model output — replace body with: mode gate check, then if ops mode and tool output contains pressure-score hits above threshold, write to .warden-audit.jsonl; exit 0
+  Remove _CONTEXT_MODULATE / context_modulate.py; PostToolUse hooks cannot modify model output -- replace body with: mode gate check, then if ops mode and tool output contains pressure-score hits above threshold, write to .warden-audit.jsonl; exit 0
 
 tools/io_channel.py
   Remove _run_universal_prefire(), _PREFIRE_GATE, _PREFIRE_MANIFEST
@@ -160,7 +160,7 @@ profiles/warden-profile.cmd
 
 ---
 
-## Section 5 — Native Ports
+## Section 5 -- Native Ports
 
 ### operator_classifier.py (new file)
 
@@ -194,17 +194,17 @@ safe_classify.py Layer 3 has a pickle ML model path that fails silently. Remove 
 
 ---
 
-## Section 6 — CLAUDE.md Update
+## Section 6 -- CLAUDE.md Update
 
 Add to the Never section:
 
 - Import from warden_shell, warden_per_turn_dispatcher, or any WARDEN module
-- Hardcode AGENTS/warden_shell paths — resolve via BEHAVIOR_TRANSFORM_TOOLS or Path(__file__).resolve()
-- Call context_modulate.py, batch_modulate_memory.py, or workstation_calibrate.py — those belong to WARDEN
+- Hardcode AGENTS/warden_shell paths -- resolve via BEHAVIOR_TRANSFORM_TOOLS or Path(__file__).resolve()
+- Call context_modulate.py, batch_modulate_memory.py, or workstation_calibrate.py -- those belong to WARDEN
 
 ---
 
-## Section 7 — Architecture After Changes
+## Section 7 -- Architecture After Changes
 
 ### File Tree
 
@@ -212,7 +212,7 @@ Add to the Never section:
     +-- CLAUDE.md
     +-- pyproject.toml                    # hatchling, dependencies = []
     +-- tools/
-    |   +-- io_state.py                   # mode authority — single source of truth
+    |   +-- io_state.py                   # mode authority -- single source of truth
     |   +-- io_mode.py                    # mode CLI + shim installer
     |   +-- channel_router.py             # routing table
     |   +-- container_ecosystem.py        # orchestrator + category tiers (T0/T1/T2, GAP/SEAL)
@@ -227,7 +227,7 @@ Add to the Never section:
     |   +-- safe_input.py                 # prompt calibration (clipboard-aware)
     |   +-- safe_classify.py              # 5-layer classification pipeline (native)
     |   +-- safe_context_helper.py        # context maintenance stub
-    |   +-- operator_classifier.py        # NEW — native OperatorTurnClassifier port
+    |   +-- operator_classifier.py        # NEW -- native OperatorTurnClassifier port
     |   +-- mcp_calibrate.py              # MCP calibration (request + response + batch)
     |   +-- warden_mcp_proxy.py           # async MCP stdio proxy (GAP/SEAL per server)
     |   +-- classifier.py                 # calibration pipeline (native, no WARDEN imports)
@@ -239,7 +239,7 @@ Add to the Never section:
     |   +-- install_precommit.py          # pre-commit hook installer
     +-- hooks/
     |   +-- _warden_cleanroom.py          # mode gate helper (derives from io_state)
-    |   +-- block-secrets.py              # security gate (always armed — mode-exempt)
+    |   +-- block-secrets.py              # security gate (always armed -- mode-exempt)
     |   +-- safe-exec-redirect.py         # Bash/PowerShell -> safe_exec
     |   +-- safe-read-redirect.py         # Read/Edit/Write -> safe_read
     |   +-- safe-fetch-redirect.py        # WebFetch/WebSearch -> safe_fetch
@@ -266,19 +266,19 @@ Add to the Never section:
 
 ### What Is Added
 
-- tools/operator_classifier.py — native keyword classifier
+- tools/operator_classifier.py -- native keyword classifier
 - semantic_intent_reframer.reframe() wired as semantic modulator in classifier.py + safe_classify.py
 - Single _gate() pattern applied uniformly to all 8 calibration hooks
 - _warden_cleanroom.cleanroom_active() derives from io_state.env_mode()
 
 ---
 
-## Section 8 — Invariants
+## Section 8 -- Invariants
 
 1. Zero WARDEN coupling. No import from any WARDEN module. No hardcoded WARDEN paths.
 2. Zero external dependencies. pyproject.toml dependencies = []. Stdlib only.
 3. Single mode authority. io_state.env_mode() is the only mode source.
-4. Research mode is a hard gate. env_mode() == "off" exits immediately — no partial calibration.
+4. Research mode is a hard gate. env_mode() == "off" exits immediately -- no partial calibration.
 5. Secrets hook is always armed. block-secrets.py runs unconditionally.
 6. Audit trail is preserved. write_gap_journal() writes to .warden-audit.jsonl. GAP categories always get a journal entry.
 7. Atomic writes only. All file writes use tempfile + os.replace().
@@ -286,7 +286,7 @@ Add to the Never section:
 
 ---
 
-## Section 9 — Calibration Pipeline Reference
+## Section 9 -- Calibration Pipeline Reference
 
 Inbound (operator to model via io_channel.py session wrapper):
   vocabulary_map T1/T2 substitution
@@ -308,7 +308,7 @@ Classification (safe_classify.py, 5 layers):
   -> CalibrationResult: pressure, policy_hit, category, intent, confidence
 
 Category steering (container_ecosystem.py):
-  T0 (VIOLENT_EXTREMISM, TRAFFICKING, CHILD_SAFETY): SEAL — always calibrated, cannot GAP
+  T0 (VIOLENT_EXTREMISM, TRAFFICKING, CHILD_SAFETY): SEAL -- always calibrated, cannot GAP
   T1 (INFLUENCE_OPS, FINANCIAL_CRIME, PHYSICAL_SECURITY): configurable (default armed)
   T2 (PRIVACY_VIOLATION, SOCIAL_ENGINEERING): configurable (default armed)
   GAP mode: native passthrough + mandatory audit journal entry
@@ -321,19 +321,19 @@ MCP transport (mcp_calibrate.py + warden_mcp_proxy.py):
 
 ---
 
-## Section 10 — Naming Overhaul
+## Section 10 -- Naming Overhaul
 
 ### Problem
 
-Several tool names carry offensive register vocabulary — "evasion" most explicitly, and the "aup_" prefix (Acceptable Use Policy evasion) implicitly. These names contradict the tool's identity as an AI management system and would tarnish the project the same way monolith artifacts did.
+Several tool names carry offensive register vocabulary -- "evasion" most explicitly, and the "aup_" prefix (Acceptable Use Policy evasion) implicitly. These names contradict the tool's identity as an AI management system and would tarnish the project the same way monolith artifacts did.
 
 Files requiring rename:
 
-    aup_lint.py      — "AUP" prefix carries evasion connotation
-    aup_rewrite.py   — same
-    aup_discover.py  — same
-    session_start.py — contains hardcoded reference to "aup_evasion.py"
-    classifier.py    — already the renamed aup_evasion.py; internal comments may still reference old name
+    aup_lint.py      -- "AUP" prefix carries evasion connotation
+    aup_rewrite.py   -- same
+    aup_discover.py  -- same
+    session_start.py -- contains hardcoded reference to "aup_evasion.py"
+    classifier.py    -- already the renamed aup_evasion.py; internal comments may still reference old name
 
 ### New Names
 
