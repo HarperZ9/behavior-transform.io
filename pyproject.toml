@@ -9,6 +9,10 @@ description = "IO boundary calibration layer for AI-assisted workspaces"
 requires-python = ">=3.11"
 dependencies = []
 
+[project.scripts]
+behavior-transform = "tools.behavior_flagship:main"
+behavior-transform-io = "tools.behavior_flagship:main"
+
 [tool.hatch.build.targets.wheel]
 packages = ["tools"]
 

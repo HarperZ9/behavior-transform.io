@@ -16,8 +16,10 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "project-telos.flagship-action/v1"
 
 REQUIRED_FILES = (
+    "AGENTS.md",
     "README.md",
     "CLAUDE.md",
+    "USAGE.md",
     "pyproject.toml",
     "docs/INTEGRATION_CONTRACT.md",
     "assets/behavior-transform-hero.svg",
@@ -130,8 +132,27 @@ def _doctor_checks() -> list[dict[str, str]]:
             "status": "MATCH" if "secret values" in contract else "DRIFT",
             "evidence_ref": "docs/INTEGRATION_CONTRACT.md#privacy-boundary",
         },
+        {
+            "id": "console-script:behavior-transform",
+            "status": "MATCH" if _console_script_points_to_main("behavior-transform") else "DRIFT",
+            "evidence_ref": "pyproject.toml#project.scripts",
+        },
+        {
+            "id": "console-script:behavior-transform-io",
+            "status": "MATCH" if _console_script_points_to_main("behavior-transform-io") else "DRIFT",
+            "evidence_ref": "pyproject.toml#project.scripts",
+        },
     ])
     return checks
+
+
+def _console_script_points_to_main(name: str) -> bool:
+    try:
+        data = tomllib.loads(_read_text("pyproject.toml"))
+    except tomllib.TOMLDecodeError:
+        return False
+    scripts = data.get("project", {}).get("scripts", {})
+    return scripts.get(name) == "tools.behavior_flagship:main"
 
 
 def doctor_envelope() -> dict[str, Any]:
