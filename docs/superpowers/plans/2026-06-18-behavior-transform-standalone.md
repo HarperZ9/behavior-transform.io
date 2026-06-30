@@ -1,8 +1,8 @@
-﻿# behavior-transform.io Standalone Extraction — Implementation Plan
+﻿# behavior-transform.io Standalone Extraction -- Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make behavior-transform.io fully standalone — zero WARDEN coupling, single mode authority, uniform research-mode hard gate, native classifier ports, and cleaned offensive naming.
+**Goal:** Make behavior-transform.io fully standalone -- zero WARDEN coupling, single mode authority, uniform research-mode hard gate, native classifier ports, and cleaned offensive naming.
 
 **Architecture:** All mode state derives from `io_state.env_mode()` via `~/.warden/io-mode.json`. Every calibration hook gains a uniform `_gate()` that exits immediately in research mode. Monolith path fallbacks are removed across 13 files. Two native ports replace WARDEN module imports. Three AUP tool files are renamed to remove offensive register.
 
@@ -10,11 +10,11 @@
 
 ## Global Constraints
 
-- `pyproject.toml` `dependencies = []` — stdlib only, zero third-party packages
+- `pyproject.toml` `dependencies = []` -- stdlib only, zero third-party packages
 - Python 3.11+ minimum (`from __future__ import annotations` on every file)
-- All file writes atomic: `tempfile` + `os.replace()` — never write directly
-- All hook tool-path resolution: `BEHAVIOR_TRANSFORM_TOOLS` env var → `Path(__file__).resolve().parents[1] / "tools"` — no WARDEN fallback
-- `block-secrets.py` is mode-exempt — never add `_gate()` to it
+- All file writes atomic: `tempfile` + `os.replace()` -- never write directly
+- All hook tool-path resolution: `BEHAVIOR_TRANSFORM_TOOLS` env var → `Path(__file__).resolve().parents[1] / "tools"` -- no WARDEN fallback
+- `block-secrets.py` is mode-exempt -- never add `_gate()` to it
 - File size limit 300 lines, function size limit 50 lines
 - `git mv` for renames (preserves history)
 - Run tests with: `python -m pytest tests/ -v` from `C:\dev\state\behavior-transform.io`
@@ -24,7 +24,7 @@
 ## File child safety assessment
 
 **Created:**
-- `tools/operator_classifier.py` — native keyword classifier replacing OperatorTurnClassifier
+- `tools/operator_classifier.py` -- native keyword classifier replacing OperatorTurnClassifier
 
 **Renamed (git mv):**
 - `tools/aup_lint.py` → `tools/pressure_scan.py`
@@ -32,40 +32,40 @@
 - `tools/aup_discover.py` → `tools/term_discover.py`
 
 **Modified:**
-- `hooks/_warden_cleanroom.py` — rewrite `cleanroom_active()` to derive from `io_state`
-- `hooks/safe-exec-redirect.py` — add `_gate()`, remove WARDEN path fallback
-- `hooks/safe-read-redirect.py` — add unified `_gate()`, remove legacy WARDEN fallback
-- `hooks/safe-fetch-redirect.py` — add `_gate()`, fix `_SAFE_FETCH_TOOL` path
-- `hooks/safe-search-redirect.py` — add `_gate()`, fix `_IO_TOOLS` + `_SAFE_EXEC` hardcodes
-- `hooks/safe-input-calibrate.py` — add `_gate()` at entry
-- `hooks/post-tool-calibrate.py` — add `_gate()`, replace `context_modulate.py` call with audit journal
-- `hooks/session-start-calibrate.py` — add `_gate()`, replace all WARDEN tool calls with native status report
-- `tools/io_channel.py` — remove `_run_universal_prefire()` + WARDEN path fallbacks
-- `tools/channel_router.py` — remove `parent.parent` WARDEN fallback in `_load_vocab_map()`
-- `tools/text_rules.py` — remove WARDEN entries from `_SOURCE_CANDIDATES`
-- `tools/safe_input.py` — remove WARDEN fallback from `_load_vocab_map()`
-- `tools/mcp_calibrate.py` — remove WARDEN fallback from `_VOCAB_CANDIDATES`, remove `context_modulate.py` call
-- `tools/safe_classify.py` — L3 heuristic-only, L4 native port, L5 native semantic modulator
-- `tools/classifier.py` — replace `warden_shell` semantic modulator try/except with `semantic_intent_reframer.reframe`
-- `tools/session_start.py` — remove `aup_evasion.py --fence` reference
-- `tools/pressure_scan.py` (was aup_lint) — fix `_default_paths()` to use CWD
-- `tools/pressure_rewrite.py` (was aup_rewrite) — fix `_default_paths()` to use CWD
-- `tools/term_discover.py` (was aup_discover) — fix `_default_paths()` to use CWD
-- `profiles/warden-profile.ps1` — replace absolute `$WARDEN_TOOLS` path
-- `profiles/warden-profile.sh` — replace home-anchored paths
-- `profiles/warden-profile.cmd` — replace absolute paths
-- `CLAUDE.md` — add three Never rules
+- `hooks/_warden_cleanroom.py` -- rewrite `cleanroom_active()` to derive from `io_state`
+- `hooks/safe-exec-redirect.py` -- add `_gate()`, remove WARDEN path fallback
+- `hooks/safe-read-redirect.py` -- add unified `_gate()`, remove legacy WARDEN fallback
+- `hooks/safe-fetch-redirect.py` -- add `_gate()`, fix `_SAFE_FETCH_TOOL` path
+- `hooks/safe-search-redirect.py` -- add `_gate()`, fix `_IO_TOOLS` + `_SAFE_EXEC` hardcodes
+- `hooks/safe-input-calibrate.py` -- add `_gate()` at entry
+- `hooks/post-tool-calibrate.py` -- add `_gate()`, replace `context_modulate.py` call with audit journal
+- `hooks/session-start-calibrate.py` -- add `_gate()`, replace all WARDEN tool calls with native status report
+- `tools/io_channel.py` -- remove `_run_universal_prefire()` + WARDEN path fallbacks
+- `tools/channel_router.py` -- remove `parent.parent` WARDEN fallback in `_load_vocab_map()`
+- `tools/text_rules.py` -- remove WARDEN entries from `_SOURCE_CANDIDATES`
+- `tools/safe_input.py` -- remove WARDEN fallback from `_load_vocab_map()`
+- `tools/mcp_calibrate.py` -- remove WARDEN fallback from `_VOCAB_CANDIDATES`, remove `context_modulate.py` call
+- `tools/safe_classify.py` -- L3 heuristic-only, L4 native port, L5 native semantic modulator
+- `tools/classifier.py` -- replace `warden_shell` semantic modulator try/except with `semantic_intent_reframer.reframe`
+- `tools/session_start.py` -- remove `aup_evasion.py --fence` reference
+- `tools/pressure_scan.py` (was aup_lint) -- fix `_default_paths()` to use CWD
+- `tools/pressure_rewrite.py` (was aup_rewrite) -- fix `_default_paths()` to use CWD
+- `tools/term_discover.py` (was aup_discover) -- fix `_default_paths()` to use CWD
+- `profiles/warden-profile.ps1` -- replace absolute `$WARDEN_TOOLS` path
+- `profiles/warden-profile.sh` -- replace home-anchored paths
+- `profiles/warden-profile.cmd` -- replace absolute paths
+- `CLAUDE.md` -- add three Never rules
 ---
 
-## Task 1: Mode Authority — Unify _warden_cleanroom.py
+## Task 1: Mode Authority -- Unify _warden_cleanroom.py
 
 **Files:**
 - Modify: `hooks/_warden_cleanroom.py`
 - Test: `tests/test_mode_authority.py`
 
 **Interfaces:**
-- Produces: `cleanroom_active(hook_name) -> tuple[bool, bool]` — `(armed, tag_required)`, both derived from `io_state.env_mode()`
-- Preserves: `write_gap_journal(hook_name, data)` — unchanged, still writes `.warden-audit.jsonl`
+- Produces: `cleanroom_active(hook_name) -> tuple[bool, bool]` -- `(armed, tag_required)`, both derived from `io_state.env_mode()`
+- Preserves: `write_gap_journal(hook_name, data)` -- unchanged, still writes `.warden-audit.jsonl`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -115,7 +115,7 @@ cd C:\dev\state\behavior-transform.io
 python -m pytest tests/test_mode_authority.py -v
 ```
 
-Expected: FAIL — `cleanroom_active` still reads sentinel/cleanroom.json, not `io_state`.
+Expected: FAIL -- `cleanroom_active` still reads sentinel/cleanroom.json, not `io_state`.
 
 - [ ] **Step 3: Replace cleanroom_active() in _warden_cleanroom.py**
 
@@ -125,7 +125,7 @@ Find the `cleanroom_active` function. Replace its entire body with:
 def cleanroom_active(hook_name: str = "") -> tuple[bool, bool]:
     """Return (armed, tag_required) derived from io_state mode authority.
 
-    Both values match — armed when mode is 'on', disarmed when 'off'.
+    Both values match -- armed when mode is 'on', disarmed when 'off'.
     write_gap_journal() remains for GAP-category audit trail.
     """
     import os
@@ -162,12 +162,12 @@ Expected: PASS
 
 ```
 git add hooks/_warden_cleanroom.py tests/test_mode_authority.py
-git commit -m "refactor: derive cleanroom_active from io_state — single mode authority"
+git commit -m "refactor: derive cleanroom_active from io_state -- single mode authority"
 ```
 
 ---
 
-## Task 2: Research Mode Hard Gate — Uniform _gate() in All Calibration Hooks
+## Task 2: Research Mode Hard Gate -- Uniform _gate() in All Calibration Hooks
 
 **Files:**
 - Modify: `hooks/safe-exec-redirect.py`, `hooks/safe-read-redirect.py`, `hooks/safe-fetch-redirect.py`, `hooks/safe-search-redirect.py`, `hooks/safe-input-calibrate.py`, `hooks/post-tool-calibrate.py`, `hooks/session-start-calibrate.py`
@@ -290,7 +290,7 @@ git commit -m "refactor: uniform _gate() research-mode passthrough in all calibr
 ```
 ---
 
-## Task 3: Native Port — operator_classifier.py
+## Task 3: Native Port -- operator_classifier.py
 
 **Files:**
 - Create: `tools/operator_classifier.py`
@@ -359,7 +359,7 @@ def test_result_fields():
 python -m pytest tests/test_operator_classifier.py -v
 ```
 
-Expected: FAIL — ModuleNotFoundError: operator_classifier
+Expected: FAIL -- ModuleNotFoundError: operator_classifier
 
 - [ ] **Step 3: Create tools/operator_classifier.py**
 
@@ -513,18 +513,18 @@ Expected: PASS (6 tests)
 
 ```
 git add tools/operator_classifier.py tests/test_operator_classifier.py
-git commit -m "feat: add operator_classifier.py — native keyword classifier (Layer 4 port)"
+git commit -m "feat: add operator_classifier.py -- native keyword classifier (Layer 4 port)"
 ```
 ---
 
-## Task 4: safe_classify.py — L3 Heuristic-Only, L4 Native Port, L5 Native Semantic Modulator
+## Task 4: safe_classify.py -- L3 Heuristic-Only, L4 Native Port, L5 Native Semantic Modulator
 
 **Files:**
 - Modify: `tools/safe_classify.py`
 - Test: `tests/test_safe_classify.py`
 
 **Interfaces:**
-- Consumes: `operator_classifier.classify()` from Task 3 — `classify(text) -> ClassifierResult`
+- Consumes: `operator_classifier.classify()` from Task 3 -- `classify(text) -> ClassifierResult`
 - Consumes: `semantic_intent_reframer.reframe(text) -> tuple[str, list[IntentRewrite]]`
 - Removes: `warden_per_turn_dispatcher` import (Layer 4), `warden_shell.classifier_modifier_layer` import (Layer 5), pickle ML model (Layer 3)
 
@@ -567,11 +567,11 @@ python -m pytest tests/test_safe_classify.py::test_no_warden_imports_after_load 
 
 Expected: FAIL
 
-- [ ] **Step 3: Edit Layer 3 — remove pickle ML model path**
+- [ ] **Step 3: Edit Layer 3 -- remove pickle ML model path**
 
 Find the block that attempts `pickle.load` or loads a `.pkl` model file. Remove the try/except ML load block entirely. Where `_ml_model` is used, replace with direct `_score_heuristic(text)` call.
 
-- [ ] **Step 4: Edit Layer 4 — replace OperatorTurnClassifier**
+- [ ] **Step 4: Edit Layer 4 -- replace OperatorTurnClassifier**
 
 Replace:
 ```python
@@ -584,7 +584,7 @@ from operator_classifier import classify as _op_classify
 
 Replace usage: wherever `OperatorTurnClassifier(text)` or similar is called, use `_op_classify(text)`. Access result fields: `.category`, `.tier`, `.intent`, `.confidence`, `.keywords_hit`.
 
-- [ ] **Step 5: Edit Layer 5 — replace semantic modulator**
+- [ ] **Step 5: Edit Layer 5 -- replace semantic modulator**
 
 Replace:
 ```python
@@ -613,12 +613,12 @@ Expected: PASS
 
 ```
 git add tools/safe_classify.py tests/test_safe_classify.py
-git commit -m "refactor: safe_classify L3/L4/L5 — heuristic-only friction gate, native classifier ports"
+git commit -m "refactor: safe_classify L3/L4/L5 -- heuristic-only friction gate, native classifier ports"
 ```
 
 ---
 
-## Task 5: classifier.py — Replace Semantic Modulator Import
+## Task 5: classifier.py -- Replace Semantic Modulator Import
 
 **Files:**
 - Modify: `tools/classifier.py`
@@ -704,7 +704,7 @@ git commit -m "refactor: replace warden_shell semantic_modulator in classifier.p
 ```
 ---
 
-## Task 6: Monolith Path Elimination — Tools
+## Task 6: Monolith Path Elimination -- Tools
 
 **Files:**
 - Modify: `tools/io_channel.py`, `tools/channel_router.py`, `tools/text_rules.py`, `tools/safe_input.py`, `tools/mcp_calibrate.py`, `tools/session_start.py`
@@ -829,7 +829,7 @@ def calibrate_deep(text: str, server_name: str = "") -> str:
 
 Find the reference to `aup_evasion.py --fence`. Replace with:
 ```python
-sys.stderr.write("behavior-transform: session start — classifier ready\n")
+sys.stderr.write("behavior-transform: session start -- classifier ready\n")
 ```
 
 - [ ] **Step 9: Edit safe-search-redirect.py**
@@ -882,7 +882,7 @@ git add tools/io_channel.py tools/channel_router.py tools/text_rules.py
 git add tools/safe_input.py tools/mcp_calibrate.py tools/session_start.py
 git add hooks/safe-search-redirect.py hooks/safe-fetch-redirect.py hooks/safe-exec-redirect.py
 git add tests/test_native_paths.py
-git commit -m "refactor: remove all WARDEN path fallbacks from tools and hooks — local resolution only"
+git commit -m "refactor: remove all WARDEN path fallbacks from tools and hooks -- local resolution only"
 ```
 ---
 
@@ -961,7 +961,7 @@ def _maybe_journal(data: dict) -> None:
         if data.get("tool_response"):
             write_gap_journal("post-tool-calibrate", data)
     except Exception:
-        pass  # advisory — never block
+        pass  # advisory -- never block
 ```
 
 Call `_maybe_journal(data)` in `main()` after the gate check.
@@ -983,7 +983,7 @@ git commit -m "refactor: replace WARDEN tool calls in session-start and post-too
 
 ---
 
-## Task 8: Naming Overhaul — Rename aup_* Files
+## Task 8: Naming Overhaul -- Rename aup_* Files
 
 **Files:**
 - Rename: `tools/aup_lint.py` → `tools/pressure_scan.py`
@@ -991,7 +991,7 @@ git commit -m "refactor: replace WARDEN tool calls in session-start and post-too
 - Rename: `tools/aup_discover.py` → `tools/term_discover.py`
 - Test: `tests/test_renamed_tools.py`
 
-**Pre-flight (run before touching files — CLAUDE.md rename rule):**
+**Pre-flight (run before touching files -- CLAUDE.md rename rule):**
 
 ```
 cd C:\dev\state\behavior-transform.io
@@ -1157,7 +1157,7 @@ Expected output contains `mode=on`.
 
 ```
 git add profiles/warden-profile.ps1 profiles/warden-profile.sh profiles/warden-profile.cmd
-git commit -m "refactor: profiles use script-relative tools path — remove WARDEN absolute paths"
+git commit -m "refactor: profiles use script-relative tools path -- remove WARDEN absolute paths"
 ```
 
 ---
@@ -1236,7 +1236,7 @@ def test_zero_external_dependencies():
     assert deps == [], f"External deps found: {deps}"
 ```
 
-- [ ] **Step 2: Run — note any remaining violations**
+- [ ] **Step 2: Run -- note any remaining violations**
 
 ```
 python -m pytest tests/test_invariants.py -v
@@ -1244,14 +1244,14 @@ python -m pytest tests/test_invariants.py -v
 
 For any FAIL: find and fix the remaining reference. Common remnants: comments that mention `warden_shell`, `pyproject.toml` entry-points with old names.
 
-- [ ] **Step 3: Update CLAUDE.md — add Never rules**
+- [ ] **Step 3: Update CLAUDE.md -- add Never rules**
 
 Open `CLAUDE.md`. Append to the `## Never` section:
 
 ```markdown
 - Import from `warden_shell`, `warden_per_turn_dispatcher`, or any WARDEN module
-- Hardcode `AGENTS/warden_shell` paths — tools resolve via `BEHAVIOR_TRANSFORM_TOOLS` env var or `Path(__file__).resolve()`
-- Call `context_modulate.py`, `batch_modulate_memory.py`, or `workstation_calibrate.py` — those belong to WARDEN
+- Hardcode `AGENTS/warden_shell` paths -- tools resolve via `BEHAVIOR_TRANSFORM_TOOLS` env var or `Path(__file__).resolve()`
+- Call `context_modulate.py`, `batch_modulate_memory.py`, or `workstation_calibrate.py` -- those belong to WARDEN
 ```
 
 - [ ] **Step 4: Run complete test suite**
@@ -1267,7 +1267,7 @@ Expected: PASS on all tests across all tasks. Zero failures.
 ```
 git add CLAUDE.md tests/test_invariants.py
 git add -u
-git commit -m "chore: add invariant test suite + CLAUDE.md Never rules — standalone extraction complete"
+git commit -m "chore: add invariant test suite + CLAUDE.md Never rules -- standalone extraction complete"
 ```
 
 ---

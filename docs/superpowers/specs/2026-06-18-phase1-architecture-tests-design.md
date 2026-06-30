@@ -1,4 +1,4 @@
-# behavior-transform.io — Phase 1 Improvement Design
+﻿# behavior-transform.io -- Phase 1 Improvement Design
 ## Architecture Refactor + Test Coverage
 
 > **For agentic workers:** This spec is for Phase 1 only. Phase 2 (configurable policy layer) is a separate spec to be written after Phase 1 ships.
@@ -9,29 +9,29 @@
 
 ---
 
-## §1 — Architecture: Three-Tier Layering
+## §1 -- Architecture: Three-Tier Layering
 
 Nothing in a lower tier imports from a higher one.
 
 ```
-Tier 1 — Data
-  tools/vocabulary_map.py         (code-identifier calibrations — unchanged)
-  tools/prose_vocabulary_map.py   (prose calibrations — unchanged)
+Tier 1 -- Data
+  tools/vocabulary_map.py         (code-identifier calibrations -- unchanged)
+  tools/prose_vocabulary_map.py   (prose calibrations -- unchanged)
 
-Tier 2 — Engine
+Tier 2 -- Engine
   tools/_core.py                  (CalibrationEngine + shared path resolution)
 
-Tier 3 — Consumers
-  tools/classifier/               (package — replaces classifier.py)
+Tier 3 -- Consumers
+  tools/classifier/               (package -- replaces classifier.py)
     __init__.py                   (re-exports public API unchanged)
     _policy.py                    (policy store, load, activate, diff, export/import)
     _refusal.py                   (RefusalModulator)
     _inference.py                 (InferenceCalibrator)
     _prompt.py                    (PromptModulator)
-    _context.py                   (context manager — CLAUDE.md / MEMORY.md)
+    _context.py                   (context manager -- CLAUDE.md / MEMORY.md)
     _analysis.py                  (pressure budgets, baselines, drift, density)
     _ci.py                        (CI gates, hook installer, pre-commit)
-    _audit.py                     (audit log — .aup-audit.jsonl)
+    _audit.py                     (audit log -- .aup-audit.jsonl)
   tools/safe_read.py              (imports CalibrationEngine from _core)
   tools/safe_write.py
   tools/safe_exec.py
@@ -43,7 +43,7 @@ The seven independent `_load_vocab_map()` copies across the codebase collapse in
 
 ---
 
-## §2 — `tools/_core.py`: CalibrationEngine
+## §2 -- `tools/_core.py`: CalibrationEngine
 
 ```python
 @dataclass(frozen=True)
@@ -82,14 +82,14 @@ def build_engine(include_tier2: bool = True) -> CalibrationEngine:
 
 ### CalibrationEngine invariants
 
-- `frozen=True` — immutable after construction; safe to share across threads (required by `io_channel.py`'s three-thread architecture).
+- `frozen=True` -- immutable after construction; safe to share across threads (required by `io_channel.py`'s three-thread architecture).
 - `build_engine()` uses a module-level `_ENGINE` cache. The 700+ pattern compilation cost is paid once per process, not once per tool invocation.
-- Consumers call `engine.apply()` and `engine.score()`. Direct access to `engine.patterns` or `engine.tier1` is internal — not part of the public contract.
+- Consumers call `engine.apply()` and `engine.score()`. Direct access to `engine.patterns` or `engine.tier1` is internal -- not part of the public contract.
 - `tools_path()` and `resolve_mode()` replace every ad-hoc copy of the same logic in hooks and wrappers.
 
 ---
 
-## §3 — `tools/classifier/` Package Split
+## §3 -- `tools/classifier/` Package Split
 
 `classifier.py` is split by responsibility. Each module owns exactly one concern. None import from each other; all import `CalibrationEngine` from `tools._core`.
 
@@ -111,9 +111,9 @@ Create all `tools/classifier/` module files, then `git rm tools/classifier.py` i
 
 ---
 
-## §4 — Safe Wrapper Refactor
+## §4 -- Safe Wrapper Refactor
 
-Each `safe_*.py` wrapper currently has its own `_load_vocab_map()`, path resolution, and pattern compilation (~30 lines each, five copies). The change is mechanical — replace that block with two lines:
+Each `safe_*.py` wrapper currently has its own `_load_vocab_map()`, path resolution, and pattern compilation (~30 lines each, five copies). The change is mechanical -- replace that block with two lines:
 
 ```python
 # Before (30 lines per wrapper):
@@ -137,11 +137,11 @@ Wrappers keep their own IO logic unchanged (file reads, subprocess pipes, HTTP).
 - Use `engine.apply(text)` for calibration.
 - Use `engine.score(text)` for pressure scoring.
 - Do not access `engine.patterns` or `engine.tier1` directly.
-- Hooks follow the same pattern. Their existing `_gate()` already calls `io_state.env_mode()` — no change there.
+- Hooks follow the same pattern. Their existing `_gate()` already calls `io_state.env_mode()` -- no change there.
 
 ---
 
-## §5 — Test Coverage
+## §5 -- Test Coverage
 
 ### `tests/test_core.py`
 
@@ -156,7 +156,7 @@ def test_tools_path_respects_env_var()
 def test_resolve_mode_returns_on_or_off()
 ```
 
-### `tests/test_classifier/` — one file per module
+### `tests/test_classifier/` -- one file per module
 
 - `test_policy.py`: load/save/activate/diff round-trip; missing file → default policy
 - `test_refusal.py`: ceiling enforcement; per-category override; invalid probability raises
@@ -189,24 +189,24 @@ def test_reframe_returns_rewrite_list()
 
 ### Coverage target
 
-Every public function in `_core.py` and every `classifier/` module has at least one happy-path and one failure-path test. Hooks remain covered by the existing `test_research_gate.py` — no new hook tests in Phase 1.
+Every public function in `_core.py` and every `classifier/` module has at least one happy-path and one failure-path test. Hooks remain covered by the existing `test_research_gate.py` -- no new hook tests in Phase 1.
 
 ---
 
-## §6 — What Does Not Change
+## §6 -- What Does Not Change
 
-- `vocabulary_map.py` and `prose_vocabulary_map.py` — data files, untouched.
-- Hook `_gate()` functions — already correct; no changes.
-- `io_state.py` — mode authority; `_core.py` delegates to it, does not replace it.
-- `io_channel.py` — threading architecture unchanged; only calibration loading updated.
-- `semantic_intent_reframer.py` — logic unchanged; tests added around existing API.
-- `pressure_scan.py` — logic unchanged; tests added around existing API.
+- `vocabulary_map.py` and `prose_vocabulary_map.py` -- data files, untouched.
+- Hook `_gate()` functions -- already correct; no changes.
+- `io_state.py` -- mode authority; `_core.py` delegates to it, does not replace it.
+- `io_channel.py` -- threading architecture unchanged; only calibration loading updated.
+- `semantic_intent_reframer.py` -- logic unchanged; tests added around existing API.
+- `pressure_scan.py` -- logic unchanged; tests added around existing API.
 - External API: `from classifier import RefusalModulator` continues to work.
-- Test invariants in `test_invariants.py` — remain passing throughout.
+- Test invariants in `test_invariants.py` -- remain passing throughout.
 
 ---
 
-## §7 — File Inventory
+## §7 -- File Inventory
 
 **New files:**
 - `tools/_core.py`
@@ -225,12 +225,12 @@ Every public function in `_core.py` and every `classifier/` module has at least 
 - `tests/test_semantic_intent_reframer.py`
 
 **Modified files:**
-- `tools/safe_read.py` — calibration loading replaced
-- `tools/safe_write.py` — calibration loading replaced
-- `tools/safe_exec.py` — calibration loading replaced
-- `tools/safe_fetch.py` — calibration loading replaced
-- `tools/safe_input.py` — calibration loading replaced
-- All hooks that do vocab loading — calibration loading replaced
+- `tools/safe_read.py` -- calibration loading replaced
+- `tools/safe_write.py` -- calibration loading replaced
+- `tools/safe_exec.py` -- calibration loading replaced
+- `tools/safe_fetch.py` -- calibration loading replaced
+- `tools/safe_input.py` -- calibration loading replaced
+- All hooks that do vocab loading -- calibration loading replaced
 
 **Deleted files:**
-- `tools/classifier.py` — replaced by `tools/classifier/` package
+- `tools/classifier.py` -- replaced by `tools/classifier/` package

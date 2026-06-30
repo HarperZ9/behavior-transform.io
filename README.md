@@ -10,11 +10,43 @@ Its job is practical: make workstation IO explicit, mode-aware, and receipt
 friendly without requiring hosts to ingest raw prompts, private file contents,
 secret values, or full model-boundary payloads.
 
+## Why it matters
+
+behavior-transform.io is the private-line IO boundary that lets Project Telos
+run across CLIs, hooks, wrappers, and model hosts without losing provenance. Its
+public value is the pattern: every read, write, exec, fetch, input, and model
+boundary can be mode-aware, receipt-backed, and explicit about what crossed the
+host boundary.
+
+For developers, it gives a concrete place to improve local AI workflow safety:
+wrappers remain importable, hooks stay deterministic, and hosts receive counts,
+hashes, verdicts, and redacted references rather than raw private payloads.
+
+## Usage
+
 ```bash
 python -m pip install -e .
 behavior-transform status --json
 behavior-transform doctor --json
 behavior-transform demo --json
+```
+
+For full operator and developer commands, see [USAGE.md](USAGE.md).
+
+## For developers
+
+Use the flagship tests and doctor before changing wrappers, hooks, profiles, or
+delivery docs:
+
+```bash
+python -B -m pytest tests/test_behavior_flagship.py tests/test_behavior_delivery_contract.py -q
+python -B tools/behavior_flagship.py doctor --json
+```
+
+Delivery-surface changes should also pass:
+
+```bash
+python -m public_surface_sweeper . --workspace --json
 ```
 
 ## Flagship Contract

@@ -1,4 +1,4 @@
-# behavior-transform.io Phase 1 — Architecture Refactor + Test Coverage
+﻿# behavior-transform.io Phase 1 -- Architecture Refactor + Test Coverage
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- `dependencies = []` — zero external packages; stdlib only
+- `dependencies = []` -- zero external packages; stdlib only
 - Python >= 3.11
 - No file > 300 lines; no function > 50 lines
 - 2-tier tools path resolution: `BEHAVIOR_TRANSFORM_TOOLS` env var or `Path(__file__).resolve().parent`
@@ -25,20 +25,20 @@
 ## File Inventory
 
 **Created:**
-- `tools/_core.py` — `tools_path()`, `resolve_mode()`, `CalibrationEngine`, `build_engine()`
-- `tools/classifier/__init__.py` — re-exports; `main()` entry point
-- `tools/classifier/_audit.py` — audit write helpers + `audit_log_cmd`
-- `tools/classifier/_policy.py` — `PolicyDef`, policy store CRUD, policy CLI cmds
-- `tools/classifier/_ci.py` — `hook_install`, `hook_remove`, `fence_check`, `probe_cmd`, `status_cmd`
-- `tools/classifier/_analysis.py` — `budget_summary`, `drift_report`, `pipeline_report`, `unified_report`, `enforce_plan`, report helpers
-- `tools/classifier/_context.py` — `_context_files`, `_split_paragraphs`, `analyze_context`, `annotate_file`, `validate_file`, `ctx_fix`
-- `tools/classifier/_inference.py` — `InferencePattern`, `InferenceCalibrator`, `CalibrationPipeline`, stream/bypass helpers
-- `tools/classifier/_refusal.py` — `RefusalModulator`, `refusal_probability`, `refusal_manage_cmd`
-- `tools/classifier/_prompt.py` — `PromptModulator`, `FamilyProfile`, `FamilyModulator`, prompt/family CLI cmds
-- `tests/test_core.py` — unit tests for `_core.py`
-- `tests/test_classifier/` — per-module test files (Tasks 3-10)
-- `tests/test_pressure_scan.py` — scoring formula + scan behavior tests
-- `tests/test_semantic_intent_reframer.py` — per-category reframe tests
+- `tools/_core.py` -- `tools_path()`, `resolve_mode()`, `CalibrationEngine`, `build_engine()`
+- `tools/classifier/__init__.py` -- re-exports; `main()` entry point
+- `tools/classifier/_audit.py` -- audit write helpers + `audit_log_cmd`
+- `tools/classifier/_policy.py` -- `PolicyDef`, policy store CRUD, policy CLI cmds
+- `tools/classifier/_ci.py` -- `hook_install`, `hook_remove`, `fence_check`, `probe_cmd`, `status_cmd`
+- `tools/classifier/_analysis.py` -- `budget_summary`, `drift_report`, `pipeline_report`, `unified_report`, `enforce_plan`, report helpers
+- `tools/classifier/_context.py` -- `_context_files`, `_split_paragraphs`, `analyze_context`, `annotate_file`, `validate_file`, `ctx_fix`
+- `tools/classifier/_inference.py` -- `InferencePattern`, `InferenceCalibrator`, `CalibrationPipeline`, stream/bypass helpers
+- `tools/classifier/_refusal.py` -- `RefusalModulator`, `refusal_probability`, `refusal_manage_cmd`
+- `tools/classifier/_prompt.py` -- `PromptModulator`, `FamilyProfile`, `FamilyModulator`, prompt/family CLI cmds
+- `tests/test_core.py` -- unit tests for `_core.py`
+- `tests/test_classifier/` -- per-module test files (Tasks 3-10)
+- `tests/test_pressure_scan.py` -- scoring formula + scan behavior tests
+- `tests/test_semantic_intent_reframer.py` -- per-category reframe tests
 
 **Renamed:**
 - `tools/classifier.py` to `tools/classifier_orig.py` (Task 2, renamed to free the `classifier` namespace)
@@ -47,8 +47,8 @@
 - `tools/classifier_orig.py` (Task 11, after all modules extracted)
 
 **Modified:**
-- `tools/safe_read.py`, `tools/safe_exec.py`, `tools/safe_write.py`, `tools/safe_fetch.py` — replace `from text_rules import apply_text_rules, collect_text_rules` with `build_engine()` from `_core`; remove any `sys.path.insert(...AGENTS_ROOT...)` lines
-- `tools/safe_input.py` — replace `_load_vocab_map()` importlib dance with `build_engine()`
+- `tools/safe_read.py`, `tools/safe_exec.py`, `tools/safe_write.py`, `tools/safe_fetch.py` -- replace `from text_rules import apply_text_rules, collect_text_rules` with `build_engine()` from `_core`; remove any `sys.path.insert(...AGENTS_ROOT...)` lines
+- `tools/safe_input.py` -- replace `_load_vocab_map()` importlib dance with `build_engine()`
 
 ---
 
@@ -62,8 +62,8 @@
 - Produces:
   - `tools_path() -> Path`
   - `resolve_mode() -> str` (returns `"on"` or `"off"`)
-  - `CalibrationEngine` — frozen dataclass with `.apply(text, *, prose=False) -> tuple[str, int, int]` and `.score(text) -> float`
-  - `build_engine(include_tier2=True) -> CalibrationEngine` — module-level singleton cache
+  - `CalibrationEngine` -- frozen dataclass with `.apply(text, *, prose=False) -> tuple[str, int, int]` and `.score(text) -> float`
+  - `build_engine(include_tier2=True) -> CalibrationEngine` -- module-level singleton cache
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -294,7 +294,7 @@ python "C:/Users/Zain/AGENTS/warden_shell/tools/safe_exec.py" -- git -C "C:/dev/
 Read the bottom of `classifier_orig.py` (around line 2707) to confirm `main()` exists. Write `tools/classifier/__init__.py`:
 
 ```python
-# Transitional stub — re-exports from classifier_orig while modules are extracted.
+# Transitional stub -- re-exports from classifier_orig while modules are extracted.
 # Delete classifier_orig.py in Task 11 once all modules are in place.
 from classifier_orig import *  # noqa: F401, F403
 from classifier_orig import main  # noqa: F401
@@ -817,7 +817,7 @@ git commit -m "refactor: extract classifier/_context.py; add test_context.py"
 - Create: `tests/test_classifier/test_inference.py`
 - Modify: `tools/classifier/__init__.py`
 
-**Source lines in classifier_orig.py:** `_calibrate_text` (line 785), `bypass_source` (line 799), `intercept_stream` (line 847), `full_bypass` (line 875), `CalibrationPipeline` (line 942) — `__init__` takes `include_tier2, content_type, policy, rules, inference_calibration, inference_strength`, `rephrase_source` (line 1435), `emit_calibration_map` (line 1491), `InferencePattern` (line 1608), `InferenceCalibrator` (line 1739) — `__init__` takes `strength, extra_patterns`
+**Source lines in classifier_orig.py:** `_calibrate_text` (line 785), `bypass_source` (line 799), `intercept_stream` (line 847), `full_bypass` (line 875), `CalibrationPipeline` (line 942) -- `__init__` takes `include_tier2, content_type, policy, rules, inference_calibration, inference_strength`, `rephrase_source` (line 1435), `emit_calibration_map` (line 1491), `InferencePattern` (line 1608), `InferenceCalibrator` (line 1739) -- `__init__` takes `strength, extra_patterns`
 
 **Interfaces:**
 - `InferencePattern` dataclass/namedtuple (fields: `pattern: re.Pattern`, `replacement: str`, `category: str`)
@@ -921,7 +921,7 @@ git commit -m "refactor: extract classifier/_inference.py; add test_inference.py
 - Create: `tests/test_classifier/test_refusal.py`
 - Modify: `tools/classifier/__init__.py`
 
-**Source lines in classifier_orig.py:** `refusal_probability` (line 1863), `_refusal_label` (line 1882), `RefusalModulator` (line 1890) — `__init__` takes `target_prob, policy, extra_inference_patterns`, `refusal_manage_cmd` (line 2018)
+**Source lines in classifier_orig.py:** `refusal_probability` (line 1863), `_refusal_label` (line 1882), `RefusalModulator` (line 1890) -- `__init__` takes `target_prob, policy, extra_inference_patterns`, `refusal_manage_cmd` (line 2018)
 
 **Interfaces:**
 - `refusal_probability(text: str, policy) -> float`, `_refusal_label(prob: float) -> str`
@@ -1017,7 +1017,7 @@ git commit -m "refactor: extract classifier/_refusal.py; add test_refusal.py"
 - Create: `tests/test_classifier/test_prompt.py`
 - Modify: `tools/classifier/__init__.py`
 
-**Source lines in classifier_orig.py:** `_parse_prompt` (line 2084), `PromptModulator` (line 2102) — `__init__` takes `role, fmt, policy, extra_inference_patterns`, `prompt_modulate_cmd` (line 2204), `prompt_session_cmd` (line 2240), `FamilyProfile` dataclass (line 2308), `FamilyModulator` (line 2371), `family_list_cmd` (line 2460)
+**Source lines in classifier_orig.py:** `_parse_prompt` (line 2084), `PromptModulator` (line 2102) -- `__init__` takes `role, fmt, policy, extra_inference_patterns`, `prompt_modulate_cmd` (line 2204), `prompt_session_cmd` (line 2240), `FamilyProfile` dataclass (line 2308), `FamilyModulator` (line 2371), `family_list_cmd` (line 2460)
 
 **Interfaces:**
 - `_parse_prompt(text: str) -> dict`
@@ -1107,10 +1107,10 @@ git commit -m "refactor: extract classifier/_prompt.py; add test_prompt.py"
 ```
 ---
 
-## Task 11: Finalize package — clean up __init__.py, delete classifier_orig.py
+## Task 11: Finalize package -- clean up __init__.py, delete classifier_orig.py
 
 **Files:**
-- Modify: `tools/classifier/__init__.py` — drop the wildcard shim; all public names come from submodules; add `main()` body
+- Modify: `tools/classifier/__init__.py` -- drop the wildcard shim; all public names come from submodules; add `main()` body
 - Delete: `tools/classifier_orig.py`
 
 **Invariant:** `from classifier import RefusalModulator, PromptModulator, FamilyModulator, CalibrationPipeline, InferenceCalibrator` all still work after this task
@@ -1203,7 +1203,7 @@ git commit -m "refactor: finalize classifier/ package; drop classifier_orig.py w
 ```
 ---
 
-## Task 12: Safe wrapper refactor — use CalibrationEngine from _core.py
+## Task 12: Safe wrapper refactor -- use CalibrationEngine from _core.py
 
 **Files:**
 - Modify: `tools/safe_read.py`, `tools/safe_exec.py`, `tools/safe_write.py`, `tools/safe_fetch.py`, `tools/safe_input.py`
@@ -1311,10 +1311,10 @@ git commit -m "refactor: safe wrappers use CalibrationEngine from _core; drop AG
 
 **Source reference:** `tools/pressure_scan.py`
 - `_TIER_WEIGHT = {"tier1": 10.0, "tier2": 2.0}`
-- `_pressure_score(hits, total_lines) -> float` — formula: `min(100.0, round(sum(weights) / max(lines, 1) * 1000, 1))`
-- `_scan_file(path, include_tier2) -> list[dict]` — each dict has `"severity"` key
-- `SCAN_EXTENSIONS = {".py", ".pyi", ".md", ...}` — `.noqa` files are skipped
-- `_walk(paths: list[Path])` — generator; skips `.noqa` and archive directories
+- `_pressure_score(hits, total_lines) -> float` -- formula: `min(100.0, round(sum(weights) / max(lines, 1) * 1000, 1))`
+- `_scan_file(path, include_tier2) -> list[dict]` -- each dict has `"severity"` key
+- `SCAN_EXTENSIONS = {".py", ".pyi", ".md", ...}` -- `.noqa` files are skipped
+- `_walk(paths: list[Path])` -- generator; skips `.noqa` and archive directories
 
 - [ ] **Step 1: Write the tests**
 
@@ -1410,11 +1410,11 @@ git commit -m "test: add test_pressure_scan.py covering score formula, tier2 sup
 - Create: `tests/test_semantic_intent_reframer.py`
 
 **Source reference:** `tools/semantic_intent_reframer.py`
-- `IntentRewrite(NamedTuple)` — fields: `span: str`, `replacement: str`, `category: str`
+- `IntentRewrite(NamedTuple)` -- fields: `span: str`, `replacement: str`, `category: str`
 - `reframe(text: str) -> tuple[str, list[IntentRewrite]]`
 - Three signal categories: `POSITIONAL`, `STEALTH`, `COVERAGE`
 - 25+ regex patterns hardcoded
-- Clean text (no signals) returns `(original_text, [])` — empty rewrites list
+- Clean text (no signals) returns `(original_text, [])` -- empty rewrites list
 
 - [ ] **Step 1: Read semantic_intent_reframer.py to find trigger strings**
 
@@ -1515,17 +1515,17 @@ git commit -m "test: add test_semantic_intent_reframer.py covering all three sig
 ## Self-Review
 
 **Spec coverage check:**
-- Three-tier architecture — Tasks 1 (CalibrationEngine in _core.py), Tasks 3-11 (classifier/ package)
-- CalibrationEngine API — Task 1 implements and tests all methods: `build()`, `apply()`, `score()`
-- classifier/ split — Tasks 2-11 cover all 8 submodules plus cleanup of the transitional shim
-- Safe wrapper refactor — Task 12 covers all 5 wrappers including safe_input importlib replacement
-- Test coverage — Tasks 1, 3-10, 13, 14 add tests for every new file; `test_invariants.py` runs after every task
+- Three-tier architecture -- Tasks 1 (CalibrationEngine in _core.py), Tasks 3-11 (classifier/ package)
+- CalibrationEngine API -- Task 1 implements and tests all methods: `build()`, `apply()`, `score()`
+- classifier/ split -- Tasks 2-11 cover all 8 submodules plus cleanup of the transitional shim
+- Safe wrapper refactor -- Task 12 covers all 5 wrappers including safe_input importlib replacement
+- Test coverage -- Tasks 1, 3-10, 13, 14 add tests for every new file; `test_invariants.py` runs after every task
 
 **Placeholder scan:** Task 14 Step 2 has explicit placeholders with instructions to replace them in Step 1. All other steps have complete code. No silent TBDs.
 
 **Type consistency:**
-- `build_engine()` returns `CalibrationEngine` — consistent across Tasks 1, 8, 9, 10, 12
-- `engine.apply(text) -> tuple[str, int, int]` — all Task 12 call sites unpack three values `(payload_text, t1_hits, t2_hits)`
+- `build_engine()` returns `CalibrationEngine` -- consistent across Tasks 1, 8, 9, 10, 12
+- `engine.apply(text) -> tuple[str, int, int]` -- all Task 12 call sites unpack three values `(payload_text, t1_hits, t2_hits)`
 - `PolicyDef` defined in Task 4 `_policy.py`, consumed by Tasks 9 and 10 via `from classifier._policy import _active_policy`
 - `InferenceCalibrator` defined in Task 8 `_inference.py`, imported by Tasks 9 and 10
 - `CalibrationPipeline` defined in Task 8 `_inference.py`, imported by Task 10
