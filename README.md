@@ -11,16 +11,17 @@ friendly without requiring hosts to ingest raw prompts, private file contents,
 secret values, or full model-boundary payloads.
 
 ```bash
-python tools/behavior_flagship.py status --json
-python tools/behavior_flagship.py doctor --json
-python tools/behavior_flagship.py demo --json
+python -m pip install -e .
+behavior-transform status --json
+behavior-transform doctor --json
+behavior-transform demo --json
 ```
 
 ## Flagship Contract
 
 | Surface | Status |
 |---------|--------|
-| CLI JSON | `tools/behavior_flagship.py status|doctor|demo --json` |
+| CLI JSON | `behavior-transform status|doctor|demo --json` |
 | Runtime profiles | `ops`, `research`, `academic` |
 | Hook surface | Claude Code PreToolUse/PostToolUse hooks in `hooks/` |
 | Shell surface | PowerShell, CMD, and sh profile helpers in `profiles/` |
@@ -56,8 +57,9 @@ docs/       Specs, plans, and integration contracts
 
 ```bash
 python -m pytest -q
-python tools/behavior_flagship.py doctor --json
+behavior-transform doctor --json
 ```
 
 See [docs/INTEGRATION_CONTRACT.md](docs/INTEGRATION_CONTRACT.md) for the IO
-boundary contract.
+boundary contract. See [AGENTS.md](AGENTS.md) for local agent instructions and
+[USAGE.md](USAGE.md) for operator/developer commands.
