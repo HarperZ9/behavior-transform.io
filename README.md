@@ -10,6 +10,10 @@ Its job is practical: make workstation IO explicit, mode-aware, and receipt
 friendly without requiring hosts to ingest raw prompts, private file contents,
 secret values, or full model-boundary payloads.
 
+**GitHub description:** Project Telos private-line IO boundary calibration
+layer for mode-aware read, write, exec, fetch, input, and model-boundary
+receipts.
+
 ## Why it matters
 
 behavior-transform.io is the private-line IO boundary that lets Project Telos
