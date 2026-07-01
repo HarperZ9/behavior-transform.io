@@ -1,6 +1,6 @@
 # behavior-transform.io
 
-![behavior-transform.io IO boundary calibration layer](assets/behavior-transform-hero.svg)
+![behavior-transform.io IO boundary calibration layer with read, write, exec, fetch, and receipt lanes](docs/brand/behavior-transform-hero.svg)
 
 `behavior-transform.io` is the Project Telos private-line IO boundary
 calibration layer. It provides local wrappers, hooks, and shell profiles for
