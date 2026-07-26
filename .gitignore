@@ -23,3 +23,7 @@ Thumbs.db
 
 # Local-only Claude instructions (global standard: never commit)
 CLAUDE.local.md
+
+# direnv environment files (can hold exported secrets)
+.envrc
+.envrc.local
