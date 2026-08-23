@@ -9,6 +9,7 @@ UserPromptSubmit:
   - Runs the local classifier.
   - Runs the local text helper.
   - Blocks with an opaque reason if the policy gate returns block=True.
+  - Runs token optimization for large prompts (fail-open).
   - Otherwise exits silently.
 
 PostToolUse:
@@ -41,6 +42,41 @@ def _tool(name: str) -> Path | None:
 
 _MAX_CHARS = 8_000
 _TIMEOUT   = 30
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, str(default)))
+    except ValueError:
+        return default
+
+
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.environ.get(name, str(default)))
+    except ValueError:
+        return default
+
+
+def _token_payload(text: str) -> dict | None:
+    if os.environ.get("PREFIRE_TOKEN_OPTIMIZE", "1").strip().lower() in {
+        "0", "false", "off",
+    }:
+        return None
+    tools = _tools_path()
+    if str(tools) not in sys.path:
+        sys.path.insert(0, str(tools))
+    try:
+        from token_optimizer import hook_payload_for_prompt
+        return hook_payload_for_prompt(
+            text,
+            mode=os.environ.get("PREFIRE_TOKEN_OPTIMIZE_MODE", "block-large"),
+            max_output_chars=_env_int("PREFIRE_TOKEN_OPTIMIZE_MAX_OUTPUT_CHARS", 3000),
+            min_chars=_env_int("PREFIRE_TOKEN_OPTIMIZE_MIN_CHARS", 1200),
+            min_savings_ratio=_env_float("PREFIRE_TOKEN_OPTIMIZE_MIN_SAVINGS", 0.20),
+        )
+    except Exception:
+        return None
 
 
 def _run_classify(text: str) -> tuple[dict | None, int]:
@@ -130,6 +166,11 @@ def main() -> int:
                 json.dumps({"decision": "block", "reason": "Request cannot be processed."})
                 + "\n"
             )
+            return 0
+
+        token_payload = _token_payload(prompt)
+        if token_payload:
+            sys.stdout.write(json.dumps(token_payload) + "\n")
         return 0
 
     if event == "PostToolUse":

@@ -1,0 +1,185 @@
+"""Universal Model Gateway.
+
+Applies the full apparatus to any LLM endpoint. The same truth injection,
+vocabulary calibration, and demodulation pipeline wraps every backend.
+
+Supported backends: anthropic, openai, gemini, ollama, generic (any
+OpenAI-compatible endpoint via base URL).
+"""
+from __future__ import annotations
+
+import json
+import os
+import ssl
+import urllib.request
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass
+class BackendConfig:
+    name: str
+    base_url: str
+    api_key_env: str
+    chat_path: str = "/v1/messages"
+    auth_header: str = "x-api-key"
+
+    @property
+    def api_key(self) -> str:
+        return os.environ.get(self.api_key_env, "")
+
+    @property
+    def chat_url(self) -> str:
+        return self.base_url.rstrip("/") + self.chat_path
+
+
+BACKENDS: dict[str, BackendConfig] = {
+    "anthropic": BackendConfig(
+        name="anthropic",
+        base_url=os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com"),
+        api_key_env="ANTHROPIC_API_KEY",
+        chat_path="/v1/messages",
+        auth_header="x-api-key",
+    ),
+    "openai": BackendConfig(
+        name="openai",
+        base_url=os.environ.get("OPENAI_BASE_URL", "https://api.openai.com"),
+        api_key_env="OPENAI_API_KEY",
+        chat_path="/v1/chat/completions",
+        auth_header="Authorization",
+    ),
+    "gemini": BackendConfig(
+        name="gemini",
+        base_url=os.environ.get("GOOGLE_AI_BASE_URL", "https://generativelanguage.googleapis.com"),
+        api_key_env="GOOGLE_API_KEY",
+        chat_path="/v1beta/models/{model}:generateContent",
+        auth_header="x-goog-api-key",
+    ),
+    "ollama": BackendConfig(
+        name="ollama",
+        base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+        api_key_env="",
+        chat_path="/api/chat",
+        auth_header="",
+    ),
+}
+
+
+class ModelGateway:
+    """Apparatus-governed model gateway. Same pipeline, any backend."""
+
+    def __init__(self, backend: str = "anthropic") -> None:
+        if backend not in BACKENDS and not backend.startswith("http"):
+            raise ValueError(f"Unknown backend '{backend}'. Known: {list(BACKENDS)}")
+        if backend.startswith("http"):
+            self._cfg = BackendConfig(
+                name="generic",
+                base_url=backend,
+                api_key_env="GENERIC_API_KEY",
+                chat_path="/v1/chat/completions",
+                auth_header="Authorization",
+            )
+        else:
+            self._cfg = BACKENDS[backend]
+
+    def chat(
+        self,
+        model: str,
+        messages: list[dict[str, Any]],
+        system: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Send a chat request through the apparatus pipeline."""
+        narrative = _active_narrative()
+        effective_system = (
+            f"{narrative}\n\n{system}" if system else narrative
+        ) or system
+
+        calibrated_messages = _calibrate(messages)
+        payload = self._build_payload(model, calibrated_messages, effective_system, **kwargs)
+        raw_response = self._send(payload)
+        return _demodulate_response(raw_response)
+
+    def _build_payload(
+        self,
+        model: str,
+        messages: list[dict],
+        system: str | None,
+        **kwargs: Any,
+    ) -> bytes:
+        data: dict[str, Any] = {"model": model, "messages": messages, **kwargs}
+        if system:
+            data["system"] = system
+        return json.dumps(data, ensure_ascii=False).encode("utf-8")
+
+    def _send(self, payload: bytes) -> dict[str, Any]:
+        url = self._cfg.chat_url
+        req = urllib.request.Request(url, data=payload, method="POST")
+        req.add_header("Content-Type", "application/json")
+        req.add_header("Content-Length", str(len(payload)))
+        if self._cfg.api_key and self._cfg.auth_header:
+            if self._cfg.auth_header == "Authorization":
+                req.add_header("Authorization", f"Bearer {self._cfg.api_key}")
+            else:
+                req.add_header(self._cfg.auth_header, self._cfg.api_key)
+
+        ctx = ssl.create_default_context() if url.startswith("https") else None
+        kwargs: dict[str, Any] = {"timeout": 180}
+        if ctx:
+            kwargs["context"] = ctx
+        with urllib.request.urlopen(req, **kwargs) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+
+
+def _active_narrative() -> str:
+    try:
+        from ..truth_profile import render_truth_context
+        return render_truth_context()
+    except Exception:
+        return ""
+
+
+def _calibrate(messages: list[dict]) -> list[dict]:
+    try:
+        from ..vocab_backend import apply_patterns, build_patterns, load_vocab_backend
+        patterns = build_patterns(load_vocab_backend())
+        out = []
+        for msg in messages:
+            content = msg.get("content")
+            if isinstance(content, str):
+                calibrated, _ = apply_patterns(content, patterns)
+                out.append({**msg, "content": calibrated})
+            else:
+                out.append(msg)
+        return out
+    except Exception:
+        return messages
+
+
+def _demodulate_response(data: dict) -> dict:
+    try:
+        from ..vocab_backend import apply_patterns, build_patterns, load_vocab_backend
+        patterns = build_patterns(load_vocab_backend())
+        for block in data.get("content", []):
+            if isinstance(block, dict) and block.get("type") == "text":
+                text, _ = apply_patterns(block.get("text", ""), patterns)
+                block["text"] = text
+        for choice in data.get("choices", []):
+            msg = choice.get("message", {})
+            if isinstance(msg.get("content"), str):
+                calibrated, _ = apply_patterns(msg["content"], patterns)
+                msg["content"] = calibrated
+    except Exception:
+        pass
+    return data
+
+
+def gateway_status() -> dict[str, object]:
+    return {
+        name: {
+            "base_url": cfg.base_url,
+            "key_configured": bool(cfg.api_key),
+            "proxy_active": name == "anthropic" and cfg.base_url != "https://api.anthropic.com",
+        }
+        for name, cfg in BACKENDS.items()
+    }

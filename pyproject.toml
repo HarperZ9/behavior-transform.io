@@ -4,9 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 name = "behavior-transform"
-version = "0.1.0"
-description = "IO boundary calibration layer for AI-assisted workspaces"
-requires-python = ">=3.11"
+version = "1.0.0"
+description = "Consolidated pre/post inference governance surface"
+requires-python = ">=3.10"
 dependencies = []
 
 [project.scripts]
@@ -19,7 +19,12 @@ packages = ["tools"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 
 [tool.ruff]
-line-length = 100
-target-version = "py311"
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
