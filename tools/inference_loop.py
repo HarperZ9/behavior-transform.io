@@ -90,12 +90,32 @@ class InferenceLoop:
         max_level: int = 5,
         quality_threshold: float = 0.5,
         record_intel: bool = True,
+        adaptive_start: bool = False,
     ) -> None:
         self._send = send_fn
         self._max_level = min(max_level, 5)
         self._quality_threshold = quality_threshold
         self._record_intel = record_intel
+        self._adaptive_start = adaptive_start
         self._intel_store = None
+        self._provider = "unknown"
+
+    def _resolve_start_level(self) -> int:
+        """Consult the intel store for the optimal starting level."""
+        if not self._adaptive_start:
+            return 0
+        try:
+            if self._intel_store is not None:
+                store = self._intel_store
+            else:
+                from provider_intelligence import intel_store
+                store = intel_store()
+            profile = store.profile(self._provider)
+            if profile.total_events >= 5:
+                return profile.optimal_level
+        except Exception:
+            pass
+        return 0
 
     def run(
         self,
@@ -111,7 +131,14 @@ class InferenceLoop:
         best_response = ""
         best_quality = 0.0
 
-        for level in range(0, self._max_level + 1):
+        start_level = self._resolve_start_level()
+        levels = list(range(start_level, self._max_level + 1))
+        if start_level > 0:
+            levels = [start_level] + [
+                l for l in range(start_level + 1, self._max_level + 1)
+            ]
+
+        for level in levels:
             if level > 0:
                 current_text = reformulate(input_text, level)
 
