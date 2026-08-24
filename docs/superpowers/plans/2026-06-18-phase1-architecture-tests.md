@@ -17,8 +17,8 @@
 - No `warden_shell` / `AGENTS` imports in any non-docs file
 - `test_invariants.py` must pass after every task
 - External import path unchanged: `from classifier import RefusalModulator` works before and after
-- All git commits via `python "C:/Users/Zain/AGENTS/warden_shell/tools/safe_exec.py" -- git ...`
-- File reads via `python "C:/Users/Zain/AGENTS/warden_shell/tools/safe_read.py" "<path>"`
+- All git commits via `python "<OPERATOR_HOME>/tools/safe_exec.py" -- git ...`
+- File reads via `python "<OPERATOR_HOME>/tools/safe_read.py" "<path>"`
 
 ---
 
@@ -286,7 +286,7 @@ git commit -m "feat: add CalibrationEngine and build_engine() singleton to _core
 - [ ] **Step 1: Rename classifier.py using git mv**
 
 ```bash
-python "C:/Users/Zain/AGENTS/warden_shell/tools/safe_exec.py" -- git -C "C:/dev/state/behavior-transform.io" mv tools/classifier.py tools/classifier_orig.py
+python "<OPERATOR_HOME>/tools/safe_exec.py" -- git -C "<PROJECT_ROOT>" mv tools/classifier.py tools/classifier_orig.py
 ```
 
 - [ ] **Step 2: Create the classifier package stub**
@@ -1118,7 +1118,7 @@ git commit -m "refactor: extract classifier/_prompt.py; add test_prompt.py"
 - [ ] **Step 1: Read __init__.py and audit for the wildcard shim line**
 
 ```bash
-python "C:/Users/Zain/AGENTS/warden_shell/tools/safe_read.py" "C:/dev/state/behavior-transform.io/tools/classifier/__init__.py"
+python "<OPERATOR_HOME>/tools/safe_read.py" "<PROJECT_ROOT>/tools/classifier/__init__.py"
 ```
 
 Identify any names still provided only by the transitional shim (the `classifier_orig import` line added in Task 2).
@@ -1187,7 +1187,7 @@ Expected: `All imports OK`
 - [ ] **Step 4: Delete classifier_orig.py from the git index**
 
 ```bash
-python "C:/Users/Zain/AGENTS/warden_shell/tools/safe_exec.py" -- git -C "C:/dev/state/behavior-transform.io" rm tools/classifier_orig.py
+python "<OPERATOR_HOME>/tools/safe_exec.py" -- git -C "<PROJECT_ROOT>" rm tools/classifier_orig.py
 ```
 
 - [ ] **Step 5: Run full test suite**
@@ -1260,11 +1260,11 @@ Update all call sites of `_load_vocab_map()` inside `safe_input.py` to use `_app
 - [ ] **Step 1: Read each safe wrapper to note exact call sites**
 
 ```bash
-python "C:/Users/Zain/AGENTS/warden_shell/tools/safe_read.py" "C:/dev/state/behavior-transform.io/tools/safe_read.py"
-python "C:/Users/Zain/AGENTS/warden_shell/tools/safe_read.py" "C:/dev/state/behavior-transform.io/tools/safe_exec.py"
-python "C:/Users/Zain/AGENTS/warden_shell/tools/safe_read.py" "C:/dev/state/behavior-transform.io/tools/safe_write.py"
-python "C:/Users/Zain/AGENTS/warden_shell/tools/safe_read.py" "C:/dev/state/behavior-transform.io/tools/safe_fetch.py"
-python "C:/Users/Zain/AGENTS/warden_shell/tools/safe_read.py" "C:/dev/state/behavior-transform.io/tools/safe_input.py"
+python "<OPERATOR_HOME>/tools/safe_read.py" "<PROJECT_ROOT>/tools/safe_read.py"
+python "<OPERATOR_HOME>/tools/safe_read.py" "<PROJECT_ROOT>/tools/safe_exec.py"
+python "<OPERATOR_HOME>/tools/safe_read.py" "<PROJECT_ROOT>/tools/safe_write.py"
+python "<OPERATOR_HOME>/tools/safe_read.py" "<PROJECT_ROOT>/tools/safe_fetch.py"
+python "<OPERATOR_HOME>/tools/safe_read.py" "<PROJECT_ROOT>/tools/safe_input.py"
 ```
 
 - [ ] **Step 2: Update safe_read.py**
@@ -1291,7 +1291,7 @@ Expected: all pass
 - [ ] **Step 7: Smoke-test safe_read**
 
 ```bash
-python "C:/dev/state/behavior-transform.io/tools/safe_read.py" "C:/dev/state/behavior-transform.io/tools/vocabulary_map.py" --summary
+python "<PROJECT_ROOT>/tools/safe_read.py" "<PROJECT_ROOT>/tools/vocabulary_map.py" --summary
 ```
 
 Expected: JSON summary with no errors
@@ -1419,7 +1419,7 @@ git commit -m "test: add test_pressure_scan.py covering score formula, tier2 sup
 - [ ] **Step 1: Read semantic_intent_reframer.py to find trigger strings**
 
 ```bash
-python "C:/Users/Zain/AGENTS/warden_shell/tools/safe_read.py" "C:/dev/state/behavior-transform.io/tools/semantic_intent_reframer.py"
+python "<OPERATOR_HOME>/tools/safe_read.py" "<PROJECT_ROOT>/tools/semantic_intent_reframer.py"
 ```
 
 Note one example trigger phrase from each of POSITIONAL, STEALTH, COVERAGE categories. Replace the placeholder strings in Step 2 before running.

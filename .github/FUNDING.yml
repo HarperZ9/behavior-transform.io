@@ -1,4 +1,3 @@
-github: [HarperZ9]
-custom:
-  - https://harperz9.github.io
-  - https://harperz9.github.io/field-guide.html
+# github: [<maintainer>]
+# custom:
+#   - https://example.com

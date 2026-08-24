@@ -21,7 +21,7 @@ import sys
 import time
 from pathlib import Path
 
-_MEMORY_DIR = Path.home() / ".claude" / "projects" / "C--Users-Zain" / "memory"
+_MEMORY_DIR = Path.home() / ".claude" / "projects" / "default" / "memory"
 _STATUS_FILE = Path.home() / ".warden-safe-cache" / "workstation-maintenance.json"
 _LEGACY_STATUS_FILE = Path.home() / ".warden-safe-cache" / "workstation-calibration.json"
 

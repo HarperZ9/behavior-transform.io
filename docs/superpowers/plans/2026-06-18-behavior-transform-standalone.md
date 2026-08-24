@@ -837,7 +837,7 @@ sys.stderr.write("behavior-transform: session start -- classifier ready\n")
 Replace:
 ```python
 _IO_TOOLS = Path.home() / "AGENTS" / "warden_shell" / "tools"
-_SAFE_EXEC = "C:/Users/Zain/AGENTS/warden_shell/tools/safe_exec.py"
+_SAFE_EXEC = "<OPERATOR_HOME>/tools/safe_exec.py"
 ```
 With:
 ```python
