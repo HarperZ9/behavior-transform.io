@@ -70,9 +70,9 @@ def _token_payload(text: str) -> dict | None:
         from token_optimizer import hook_payload_for_prompt
         return hook_payload_for_prompt(
             text,
-            mode=os.environ.get("PREFIRE_TOKEN_OPTIMIZE_MODE", "block-large"),
+            mode=os.environ.get("PREFIRE_TOKEN_OPTIMIZE_MODE", "context"),
             max_output_chars=_env_int("PREFIRE_TOKEN_OPTIMIZE_MAX_OUTPUT_CHARS", 3000),
-            min_chars=_env_int("PREFIRE_TOKEN_OPTIMIZE_MIN_CHARS", 1200),
+            min_chars=_env_int("PREFIRE_TOKEN_OPTIMIZE_MIN_CHARS", 2000),
             min_savings_ratio=_env_float("PREFIRE_TOKEN_OPTIMIZE_MIN_SAVINGS", 0.20),
         )
     except Exception:

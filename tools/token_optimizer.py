@@ -16,7 +16,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 DEFAULT_MAX_OUTPUT_CHARS = 3_000
-DEFAULT_MIN_CHARS = 1_200
+DEFAULT_MIN_CHARS = 2_000
 DEFAULT_MIN_SAVINGS_RATIO = 0.20
 
 _ACTION_WORDS = (
@@ -129,7 +129,7 @@ def optimize_prompt(
 def hook_payload_for_prompt(
     text: str,
     *,
-    mode: str = "block-large",
+    mode: str = "context",
     max_output_chars: int = DEFAULT_MAX_OUTPUT_CHARS,
     min_chars: int = DEFAULT_MIN_CHARS,
     min_savings_ratio: float = DEFAULT_MIN_SAVINGS_RATIO,
