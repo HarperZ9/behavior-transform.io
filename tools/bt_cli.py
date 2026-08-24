@@ -235,6 +235,35 @@ def _cmd_authority(args: argparse.Namespace) -> int:
     return 0 if grant.valid else 1
 
 
+def _cmd_audit(args: argparse.Namespace) -> int:
+    from authority_audit import audit_summary, read_audit_log
+    if args.recent:
+        entries = read_audit_log(limit=args.limit, gate=args.gate_filter or None)
+        if args.json:
+            sys.stdout.write(json.dumps(entries, indent=2) + "\n")
+        else:
+            if not entries:
+                sys.stdout.write("No audit entries found.\n")
+            else:
+                for e in entries:
+                    verdict = "ALLOW" if e.get("allowed") else "DENY"
+                    sys.stdout.write(
+                        f"[{verdict}] {e.get('gate','?')}:{e.get('entitlement','?')} "
+                        f"{e.get('reason','')}\n"
+                    )
+    else:
+        summary = audit_summary()
+        if args.json:
+            sys.stdout.write(json.dumps(summary, indent=2) + "\n")
+        else:
+            sys.stdout.write(f"Total: {summary['total']} "
+                             f"(allowed={summary['allowed']}, denied={summary['denied']})\n")
+            if summary.get("gates"):
+                for g, counts in summary["gates"].items():
+                    sys.stdout.write(f"  {g}: {counts}\n")
+    return 0
+
+
 def _cmd_gate(args: argparse.Namespace) -> int:
     from authority_gate import check_entitlement
     result = check_entitlement(args.entitlement, gate=args.gate or "cli")
@@ -375,6 +404,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("entitlement", help="Entitlement to check (transform, infer, inoculate, etc.)")
     p.add_argument("--gate", default="", help="Gate name for audit trail")
     p.set_defaults(func=_cmd_gate)
+
+    # audit
+    p = sub.add_parser("audit", help="Authority audit log viewer")
+    p.add_argument("--recent", action="store_true", help="Show recent entries instead of summary")
+    p.add_argument("--limit", type=int, default=20, help="Max entries to show")
+    p.add_argument("--gate-filter", default="", help="Filter by gate name")
+    p.set_defaults(func=_cmd_audit)
 
     # intel
     p = sub.add_parser("intel", help="Provider intelligence trends and analytics")

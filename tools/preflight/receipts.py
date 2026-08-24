@@ -33,12 +33,27 @@ def _timestamp() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
 
 
+def _resolve_operator_fingerprint() -> str:
+    """Inject operator fingerprint from env authority if available."""
+    try:
+        from env_authority import cached_authority
+        grant = cached_authority()
+        if grant.operator_fingerprint:
+            return grant.operator_fingerprint
+    except Exception:
+        pass
+    return ""
+
+
 def write_receipt(receipt_root: Path, payload: dict[str, Any]) -> Path:
+    operator_fp = _resolve_operator_fingerprint()
     receipt = {
         "schema": "warden.prefire.receipt.v1",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         **payload,
     }
+    if operator_fp:
+        receipt["operator_fingerprint"] = operator_fp
     assert_no_secret_markers(receipt)
 
     surface = str(receipt["surface"])

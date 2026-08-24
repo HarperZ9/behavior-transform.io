@@ -19,6 +19,11 @@ from output_enforcer import EnforcementResult, enforce_output
 from refusal_recovery import evaluate_response, reformulate
 from response_analyzer import analyze_response
 
+try:
+    from authority_gate import gate_infer as _gate_infer
+except ImportError:
+    _gate_infer = None
+
 
 SendFn = Callable[[str | None, list[dict]], str]
 
@@ -91,12 +96,14 @@ class InferenceLoop:
         quality_threshold: float = 0.5,
         record_intel: bool = True,
         adaptive_start: bool = False,
+        enforce_auth: bool = False,
     ) -> None:
         self._send = send_fn
         self._max_level = min(max_level, 5)
         self._quality_threshold = quality_threshold
         self._record_intel = record_intel
         self._adaptive_start = adaptive_start
+        self._enforce_auth = enforce_auth
         self._intel_store = None
         self._provider = "unknown"
 
@@ -125,6 +132,19 @@ class InferenceLoop:
         system: str | None = None,
     ) -> LoopResult:
         """Run the inference loop with escalating recovery."""
+        if self._enforce_auth and _gate_infer is not None:
+            gate_result = _gate_infer()
+            if not gate_result.allowed:
+                return LoopResult(
+                    succeeded=False,
+                    response=f"[gate:infer denied] {gate_result.reason}",
+                    raw_response="",
+                    final_level=0,
+                    attempts=[],
+                    enforcement=None,
+                    total_elapsed_ms=0,
+                )
+
         loop_start = time.monotonic()
         attempts: list[AttemptRecord] = []
         current_text = input_text

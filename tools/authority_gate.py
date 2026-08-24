@@ -15,6 +15,27 @@ from typing import Any
 
 from env_authority import AuthorityGrant, resolve_authority
 
+_audit_enabled = True
+
+
+def _log_gate(result: "GateResult", grant: AuthorityGrant | None) -> None:
+    if not _audit_enabled:
+        return
+    try:
+        from authority_audit import record_gate_check
+        record_gate_check(
+            gate=result.gate,
+            entitlement=result.entitlement,
+            allowed=result.allowed,
+            reason=result.reason,
+            operator_fingerprint=grant.operator_fingerprint if grant else "",
+            machine_fingerprint=grant.machine_fingerprint if grant else "",
+            surface=grant.surface if grant else "",
+            capsule_sha256=grant.capsule_sha256 if grant else "",
+        )
+    except Exception:
+        pass
+
 
 @dataclass(frozen=True)
 class GateResult:
@@ -76,19 +97,29 @@ def check_entitlement(
 
     if not grant.valid:
         if grant.status != "authorized":
-            return _deny(gate, entitlement,
-                         f"unauthorized: {grant.evidence.get('reason', grant.status)}",
-                         grant)
+            result = _deny(gate, entitlement,
+                           f"unauthorized: {grant.evidence.get('reason', grant.status)}",
+                           grant)
+            _log_gate(result, grant)
+            return result
         if grant.expired:
-            return _deny(gate, entitlement, "grant_expired", grant)
-        return _deny(gate, entitlement, f"invalid: {grant.seal_status}", grant)
+            result = _deny(gate, entitlement, "grant_expired", grant)
+            _log_gate(result, grant)
+            return result
+        result = _deny(gate, entitlement, f"invalid: {grant.seal_status}", grant)
+        _log_gate(result, grant)
+        return result
 
     if not grant.has_entitlement(entitlement):
-        return _deny(gate, entitlement,
-                     f"entitlement_missing: {entitlement} not in {grant.surface}",
-                     grant)
+        result = _deny(gate, entitlement,
+                       f"entitlement_missing: {entitlement} not in {grant.surface}",
+                       grant)
+        _log_gate(result, grant)
+        return result
 
-    return _allow(gate, entitlement, grant)
+    result = _allow(gate, entitlement, grant)
+    _log_gate(result, grant)
+    return result
 
 
 def gate_launch(surface: str | None = None) -> GateResult:

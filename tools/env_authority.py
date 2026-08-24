@@ -185,6 +185,41 @@ def _try_activation_surface() -> str:
     return "generic_cli"
 
 
+_grant_cache: dict[str, AuthorityGrant] = {}
+
+
+def cached_authority(
+    surface: str | None = None,
+    ttl: int = DEFAULT_GRANT_TTL_SECONDS,
+) -> AuthorityGrant:
+    """Return a cached grant if still valid, otherwise resolve fresh.
+
+    Cache key is the resolved surface. A grant that has expired or was
+    unauthorized is not cached (every call re-resolves, so environment
+    changes take effect immediately on failure paths).
+    """
+    key = surface or "__default__"
+    cached = _grant_cache.get(key)
+    if cached is not None and cached.valid:
+        return cached
+
+    grant = resolve_authority(surface=surface, ttl=ttl)
+    if grant.valid:
+        _grant_cache[key] = grant
+    else:
+        _grant_cache.pop(key, None)
+    return grant
+
+
+def invalidate_cache(surface: str | None = None) -> None:
+    """Clear cached grants. Call after environment changes."""
+    if surface:
+        _grant_cache.pop(surface, None)
+        _grant_cache.pop("__default__", None)
+    else:
+        _grant_cache.clear()
+
+
 def resolve_authority(
     surface: str | None = None,
     ttl: int = DEFAULT_GRANT_TTL_SECONDS,

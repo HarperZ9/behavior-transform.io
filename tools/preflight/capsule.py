@@ -98,4 +98,12 @@ def build_model_packet(
                 "reverify_only_on": [],
             }
         )
+
+    try:
+        from env_authority import cached_authority
+        grant = cached_authority(surface=surface)
+        fields["env_authority"] = grant.surface_projection()
+    except Exception:
+        fields["env_authority"] = {"authorization_status": "unavailable"}
+
     return {"warden_prefire": {**fields}}
