@@ -13,7 +13,10 @@ import os
 import ssl
 import urllib.request
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from inference_loop import LoopResult
 
 
 @dataclass
@@ -129,6 +132,43 @@ class ModelGateway:
             kwargs["context"] = ctx
         with urllib.request.urlopen(req, **kwargs) as resp:
             return json.loads(resp.read().decode("utf-8"))
+
+
+    def chat_with_recovery(
+        self,
+        model: str,
+        messages: list[dict[str, Any]],
+        system: str | None = None,
+        *,
+        max_level: int = 5,
+        **kwargs: Any,
+    ) -> "LoopResult":
+        """Chat with automatic refusal recovery and hedge enforcement."""
+        from inference_loop import InferenceLoop
+
+        def send_fn(sys_prompt, msgs):
+            resp = self.chat(model, msgs, system=sys_prompt, **kwargs)
+            for block in resp.get("content", []):
+                if isinstance(block, dict) and block.get("type") == "text":
+                    return block.get("text", "")
+            for choice in resp.get("choices", []):
+                msg = choice.get("message", {})
+                if isinstance(msg.get("content"), str):
+                    return msg["content"]
+            return ""
+
+        user_text = ""
+        for msg in reversed(messages):
+            if msg.get("role") == "user":
+                content = msg.get("content", "")
+                if isinstance(content, str):
+                    user_text = content
+                    break
+
+        loop = InferenceLoop(send_fn, max_level=max_level)
+        return loop.run(
+            user_text, messages[:-1] if messages else [], system=system,
+        )
 
 
 def _active_narrative() -> str:
