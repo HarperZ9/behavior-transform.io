@@ -16,6 +16,7 @@ bt = "tools.bt_cli:main"
 bt-validate = "tools.validate:main"
 bt-doctor = "tools.subsystem_doctor:main"
 bt-transform = "tools.transform:main"
+bt-adaptive = "tools.adaptive_modulator:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["tools"]

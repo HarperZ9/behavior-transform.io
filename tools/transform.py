@@ -109,6 +109,21 @@ def transform_text(
     working = text
     framing = ""
 
+    # Layer 0: Obfuscation normalization (always runs first)
+    try:
+        from adaptive_modulator import normalize_obfuscation
+        normalized, obf_count = normalize_obfuscation(working)
+        layers.append(TransformLayer(
+            name="obfuscation_normalization",
+            applied=obf_count > 0,
+            detail=f"{obf_count} normalizations" if obf_count else "clean",
+            count=obf_count,
+        ))
+        if obf_count > 0:
+            working = normalized
+    except Exception as e:
+        layers.append(TransformLayer(name="obfuscation_normalization", applied=False, detail=str(e)))
+
     # Layer 1: Category detection
     try:
         from categories import category_detector

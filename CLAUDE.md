@@ -29,15 +29,20 @@ Single native surface for the full inference boundary stack:
 |---------|--------|---------|
 | `bt` | `tools.bt_cli:main` | Unified CLI dispatcher (validate, doctor, transform, scan, modulate, calibrate, mode, status) |
 | `bt validate <text>` | | Run text through all layers and report |
-| `bt transform <text>` | | Full-stack semantic transform (categories + vocab + modulation + calibration) |
+| `bt transform <text>` | | Full-stack semantic transform (normalization + categories + vocab + modulation + calibration) |
 | `bt scan <text>` | | Pre-inference pipeline scan (pressure, policy, friction, gate signal) |
 | `bt modulate <text>` | | Apply 5-layer semantic modulation |
+| `bt adaptive <text>` | | Adaptive multi-pass modulation with obfuscation detection and density escalation |
 | `bt calibrate <text>` | | Apply multilingual prose vocabulary calibration |
+| `bt normalize <text>` | | Detect and remove obfuscation (leetspeak, homoglyphs, zero-width, spacing) |
+| `bt density <text>` | | Analyze semantic density and escalation level |
+| `bt discover [paths]` | | Find uncalibrated vocabulary in the codebase |
 | `bt doctor` | | 22-check subsystem health verification |
 | `bt mode` | | Show current IO mode and profile |
 | `bt status` | | Full surface status |
 | `bt-validate` | `tools.validate:main` | Standalone validate entry point |
 | `bt-doctor` | `tools.subsystem_doctor:main` | Standalone doctor entry point |
+| `bt-adaptive` | `tools.adaptive_modulator:main` | Standalone adaptive modulation entry point |
 
 All subcommands accept `--json` for structured output.
 
@@ -87,6 +92,7 @@ tools/                   Core modules (flat, all imports resolve locally)
   vocabulary_map.py      Identifier calibration map
   prose_vocabulary_map.py  Multilingual prose calibration
   semantic_intent_reframer.py  Structural intent reframing
+  adaptive_modulator.py  Adaptive multi-pass modulation (obfuscation detection, density escalation, convergence)
   operator_classifier.py       8-category native classifier
   container_ecosystem.py       Orchestrator
   pressure_scan.py       Pressure scan

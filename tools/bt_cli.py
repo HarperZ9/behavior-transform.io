@@ -107,6 +107,85 @@ def _cmd_calibrate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_adaptive(args: argparse.Namespace) -> int:
+    from adaptive_modulator import adaptive_modulate
+    result = adaptive_modulate(
+        args.text,
+        max_passes=args.max_passes,
+    )
+    if args.json:
+        sys.stdout.write(json.dumps(result.to_dict(), indent=2) + "\n")
+    else:
+        lines = [
+            f"Adaptive ({result.total_passes} pass{'es' if result.total_passes != 1 else ''}):",
+            f"  Obfuscation: {result.obfuscation_detected}",
+            f"  Density: {result.density.density_ratio:.1%} (level {result.density.escalation_level})",
+            f"  Changes: {result.total_changes}",
+        ]
+        if result.changed:
+            lines.append(f"  Result: {result.modulated[:120]}")
+        else:
+            lines.append("  No modulation needed (clean text).")
+        sys.stdout.write("\n".join(lines) + "\n")
+    return 0
+
+
+def _cmd_discover(args: argparse.Namespace) -> int:
+    from term_discover import discover
+    paths = [Path(p) for p in args.paths] if args.paths else [Path.cwd()]
+    results = discover(paths, min_count=args.min_count)
+    if args.json:
+        sys.stdout.write(json.dumps(results, indent=2) + "\n")
+    else:
+        if not results:
+            sys.stdout.write("No uncalibrated terms found.\n")
+        else:
+            sys.stdout.write(f"Found {len(results)} uncalibrated term(s):\n")
+            for r in results[:20]:
+                sys.stdout.write(
+                    f"  [{r['category']:>16}] {r['term']!r} (x{r['count']})\n"
+                )
+    return 0
+
+
+def _cmd_normalize(args: argparse.Namespace) -> int:
+    from adaptive_modulator import normalize_obfuscation
+    normalized, changes = normalize_obfuscation(args.text)
+    if args.json:
+        sys.stdout.write(json.dumps({
+            "original": args.text,
+            "normalized": normalized,
+            "changes": changes,
+            "obfuscation_detected": changes > 0,
+        }, indent=2) + "\n")
+    else:
+        if changes == 0:
+            sys.stdout.write("No obfuscation detected.\n")
+        else:
+            sys.stdout.write(f"[{changes} normalizations]\n{normalized}\n")
+    return 0
+
+
+def _cmd_density(args: argparse.Namespace) -> int:
+    from adaptive_modulator import analyze_density
+    profile = analyze_density(args.text)
+    if args.json:
+        sys.stdout.write(json.dumps({
+            "total_tokens": profile.total_tokens,
+            "sensitive_tokens": profile.sensitive_tokens,
+            "density_ratio": round(profile.density_ratio, 4),
+            "escalation_level": profile.escalation_level,
+            "needs_deep_pass": profile.needs_deep_pass,
+        }, indent=2) + "\n")
+    else:
+        sys.stdout.write(
+            f"Density: {profile.density_ratio:.1%} "
+            f"({profile.sensitive_tokens}/{profile.total_tokens} sensitive) "
+            f"level={profile.escalation_level}\n"
+        )
+    return 0
+
+
 def _cmd_mode(args: argparse.Namespace) -> int:
     from io_state import env_mode, env_profile
     mode = env_mode()
@@ -168,6 +247,28 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("calibrate", help="Apply prose vocabulary calibration")
     p.add_argument("text", help="Input text to calibrate")
     p.set_defaults(func=_cmd_calibrate)
+
+    # adaptive
+    p = sub.add_parser("adaptive", help="Adaptive multi-pass modulation with obfuscation detection")
+    p.add_argument("text", help="Input text to modulate")
+    p.add_argument("--max-passes", type=int, default=3, help="Max modulation passes (1-5)")
+    p.set_defaults(func=_cmd_adaptive)
+
+    # discover
+    p = sub.add_parser("discover", help="Find uncalibrated vocabulary in the codebase")
+    p.add_argument("paths", nargs="*", help="Paths to scan (default: cwd)")
+    p.add_argument("--min-count", type=int, default=1, help="Min occurrences to report")
+    p.set_defaults(func=_cmd_discover)
+
+    # normalize
+    p = sub.add_parser("normalize", help="Detect and remove obfuscation (leetspeak, homoglyphs, spacing)")
+    p.add_argument("text", help="Input text to normalize")
+    p.set_defaults(func=_cmd_normalize)
+
+    # density
+    p = sub.add_parser("density", help="Analyze semantic density of input text")
+    p.add_argument("text", help="Input text to analyze")
+    p.set_defaults(func=_cmd_density)
 
     # mode
     p = sub.add_parser("mode", help="Show current IO mode and profile")
