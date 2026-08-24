@@ -218,6 +218,34 @@ def _cmd_classify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_authority(args: argparse.Namespace) -> int:
+    from env_authority import resolve_authority
+    grant = resolve_authority(surface=args.surface or None)
+    if args.json:
+        sys.stdout.write(json.dumps(grant.to_dict(), indent=2) + "\n")
+    else:
+        sys.stdout.write(f"Status: {grant.status}\n")
+        sys.stdout.write(f"Surface: {grant.surface}\n")
+        sys.stdout.write(f"Operator: {grant.operator_fingerprint[:12] or 'none'}...\n")
+        sys.stdout.write(f"Machine: {grant.machine_fingerprint}\n")
+        sys.stdout.write(f"Seal: {grant.seal_status}\n")
+        sys.stdout.write(f"Valid: {grant.valid}\n")
+        if grant.entitlements:
+            sys.stdout.write(f"Entitlements: {', '.join(grant.entitlements)}\n")
+    return 0 if grant.valid else 1
+
+
+def _cmd_gate(args: argparse.Namespace) -> int:
+    from authority_gate import check_entitlement
+    result = check_entitlement(args.entitlement, gate=args.gate or "cli")
+    if args.json:
+        sys.stdout.write(json.dumps(result.to_dict(), indent=2) + "\n")
+    else:
+        verdict = "ALLOWED" if result.allowed else "DENIED"
+        sys.stdout.write(f"{verdict}: {result.entitlement} ({result.reason})\n")
+    return 0 if result.allowed else 1
+
+
 def _cmd_intel(args: argparse.Namespace) -> int:
     from intel_trends import analyze_trends
     report = analyze_trends(provider=args.provider or "")
@@ -336,6 +364,17 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("classify", help="Statistical category + hedge classification (ML)")
     p.add_argument("text", help="Text to classify")
     p.set_defaults(func=_cmd_classify)
+
+    # authority
+    p = sub.add_parser("authority", help="Resolve and display environment-native authorization state")
+    p.add_argument("--surface", default="", help="Override surface for resolution")
+    p.set_defaults(func=_cmd_authority)
+
+    # gate
+    p = sub.add_parser("gate", help="Check a specific entitlement gate")
+    p.add_argument("entitlement", help="Entitlement to check (transform, infer, inoculate, etc.)")
+    p.add_argument("--gate", default="", help="Gate name for audit trail")
+    p.set_defaults(func=_cmd_gate)
 
     # intel
     p = sub.add_parser("intel", help="Provider intelligence trends and analytics")
