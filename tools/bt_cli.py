@@ -197,6 +197,37 @@ def _cmd_mode(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_infer(args: argparse.Namespace) -> int:
+    from inference_loop import InferenceLoop
+    from apparatus.gateway import ModelGateway
+
+    gw = ModelGateway(args.backend)
+
+    def send_fn(system, messages):
+        resp = gw.chat(args.model, messages, system=system)
+        for block in resp.get("content", []):
+            if isinstance(block, dict) and block.get("type") == "text":
+                return block.get("text", "")
+        for choice in resp.get("choices", []):
+            msg = choice.get("message", {})
+            if isinstance(msg.get("content"), str):
+                return msg["content"]
+        return ""
+
+    loop = InferenceLoop(send_fn, max_level=args.max_level)
+    result = loop.run(args.text, [])
+
+    if args.json:
+        sys.stdout.write(json.dumps(result.to_dict(), indent=2) + "\n")
+    else:
+        if result.succeeded:
+            sys.stdout.write(result.response + "\n")
+        else:
+            sys.stdout.write(f"FAILED after {len(result.attempts)} attempts\n")
+            sys.stdout.write(result.response + "\n")
+    return 0 if result.succeeded else 1
+
+
 def _cmd_status(args: argparse.Namespace) -> int:
     from behavior_flagship import status as flagship_status
     result = flagship_status()
@@ -269,6 +300,14 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("density", help="Analyze semantic density of input text")
     p.add_argument("text", help="Input text to analyze")
     p.set_defaults(func=_cmd_density)
+
+    # infer
+    p = sub.add_parser("infer", help="Closed-loop inference with escalating recovery")
+    p.add_argument("text", help="Input text to send through the inference loop")
+    p.add_argument("--backend", default="anthropic", help="Model backend")
+    p.add_argument("--model", default="claude-sonnet-4-20250514", help="Model ID")
+    p.add_argument("--max-level", type=int, default=5, help="Max recovery level (1-5)")
+    p.set_defaults(func=_cmd_infer)
 
     # mode
     p = sub.add_parser("mode", help="Show current IO mode and profile")

@@ -17,6 +17,7 @@ bt-validate = "tools.validate:main"
 bt-doctor = "tools.subsystem_doctor:main"
 bt-transform = "tools.transform:main"
 bt-adaptive = "tools.adaptive_modulator:main"
+bt-infer = "tools.inference_loop:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["tools"]
