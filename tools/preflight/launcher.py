@@ -47,13 +47,31 @@ def launch(
     surface: str,
     host: str,
     io_mode: str | None = None,
+    enforce_auth: bool = True,
 ) -> dict[str, Any]:
     """Full preflight verification + child process launch.
 
     Returns a status dict with exit_code, state_path, receipt_path.
+    When enforce_auth is True, the authority gate is checked before
+    any seal, capsule, or manifest validation.
     """
     if not child:
         raise ValueError("child command is required")
+
+    if enforce_auth:
+        try:
+            from authority_gate import gate_launch
+            gate_result = gate_launch(surface=surface)
+            if not gate_result.allowed:
+                return {
+                    "status": "fail",
+                    "surface": surface,
+                    "message": f"authority gate denied: {gate_result.reason}",
+                    "gate": gate_result.to_dict(),
+                    "findings": [],
+                }
+        except ImportError:
+            pass
 
     try:
         child = resolve_native_command(child)

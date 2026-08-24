@@ -275,6 +275,139 @@ def _cmd_gate(args: argparse.Namespace) -> int:
     return 0 if result.allowed else 1
 
 
+def _cmd_session(args: argparse.Namespace) -> int:
+    from session_authority import (
+        create_session, validate_session, revoke_session,
+        list_sessions, cleanup_expired, refresh_session,
+    )
+    if args.action == "create":
+        session = create_session(surface=args.surface or None, ttl=args.ttl)
+        if args.json:
+            sys.stdout.write(json.dumps(session.to_dict(), indent=2) + "\n")
+        else:
+            sys.stdout.write(f"Session created: {session.token[:16]}...\n")
+            sys.stdout.write(f"  Surface: {session.surface}\n")
+            sys.stdout.write(f"  Active: {session.active}\n")
+            sys.stdout.write(f"  Entitlements: {', '.join(session.entitlements)}\n")
+        return 0 if session.active else 1
+
+    if args.action == "validate":
+        if not args.token:
+            sys.stderr.write("--token required for validate\n")
+            return 1
+        session = validate_session(args.token)
+        if session is None:
+            sys.stdout.write("Session not found.\n")
+            return 1
+        if args.json:
+            sys.stdout.write(json.dumps(session.to_dict(), indent=2) + "\n")
+        else:
+            status = "ACTIVE" if session.active else "INACTIVE"
+            if session.revoked:
+                status = f"REVOKED ({session.revoke_reason})"
+            sys.stdout.write(f"{status}: {session.token[:16]}...\n")
+            sys.stdout.write(f"  Gate checks: {session.gate_checks}\n")
+            sys.stdout.write(f"  Infer count: {session.infer_count}\n")
+        return 0 if session.active else 1
+
+    if args.action == "revoke":
+        if not args.token:
+            sys.stderr.write("--token required for revoke\n")
+            return 1
+        session = revoke_session(args.token, reason=args.reason or "cli_revoked")
+        if session is None:
+            sys.stdout.write("Session not found.\n")
+            return 1
+        sys.stdout.write(f"Revoked: {session.token[:16]}...\n")
+        return 0
+
+    if args.action == "refresh":
+        if not args.token:
+            sys.stderr.write("--token required for refresh\n")
+            return 1
+        session = refresh_session(args.token)
+        if session is None:
+            sys.stdout.write("Session not found.\n")
+            return 1
+        status = "ACTIVE" if session.active else "REVOKED" if session.revoked else "EXPIRED"
+        sys.stdout.write(f"{status}: {session.token[:16]}...\n")
+        return 0 if session.active else 1
+
+    if args.action == "list":
+        sessions = list_sessions(
+            active_only=args.active_only,
+            surface=args.surface or None,
+        )
+        if args.json:
+            sys.stdout.write(json.dumps(
+                [s.to_dict() for s in sessions], indent=2) + "\n")
+        else:
+            if not sessions:
+                sys.stdout.write("No sessions found.\n")
+            else:
+                for s in sessions:
+                    status = "ACTIVE" if s.active else "revoked" if s.revoked else "expired"
+                    sys.stdout.write(
+                        f"  [{status:>7}] {s.token[:12]}... "
+                        f"surface={s.surface} gates={s.gate_checks} "
+                        f"infers={s.infer_count}\n"
+                    )
+        return 0
+
+    if args.action == "cleanup":
+        count = cleanup_expired(max_age_seconds=args.max_age)
+        sys.stdout.write(f"Cleaned up {count} expired session(s).\n")
+        return 0
+
+    sys.stderr.write(f"Unknown action: {args.action}\n")
+    return 1
+
+
+def _cmd_policy(args: argparse.Namespace) -> int:
+    from authority_policy import policy_engine, evaluate_policy
+    from env_authority import resolve_authority
+
+    if args.action == "list":
+        engine = policy_engine()
+        if args.json:
+            sys.stdout.write(json.dumps(engine.to_dict(), indent=2) + "\n")
+        else:
+            rules = engine.rules
+            if not rules:
+                sys.stdout.write("No policy rules configured.\n")
+            else:
+                sys.stdout.write(f"{len(rules)} policy rule(s):\n")
+                for r in rules:
+                    sys.stdout.write(
+                        f"  [{r.rule_type}] {r.name}: "
+                        f"{r.entitlement} {r.config}\n"
+                    )
+        return 0
+
+    if args.action == "check":
+        if not args.entitlement:
+            sys.stderr.write("--entitlement required for check\n")
+            return 1
+        grant = resolve_authority(surface=args.surface or None)
+        verdict = evaluate_policy(args.entitlement, grant)
+        if args.json:
+            sys.stdout.write(json.dumps(verdict.to_dict(), indent=2) + "\n")
+        else:
+            status = "ALLOWED" if verdict.allowed else "DENIED"
+            sys.stdout.write(f"{status}: {verdict.entitlement}\n")
+            sys.stdout.write(
+                f"  Rules: {verdict.rules_passed}/{verdict.rules_evaluated} passed\n"
+            )
+            if not verdict.allowed:
+                sys.stdout.write(
+                    f"  Denied by: {verdict.denial_rule} ({verdict.denial_reason})\n"
+                )
+        return 0 if verdict.allowed else 1
+
+    sys.stderr.write(f"Unknown action: {args.action}\n")
+    return 1
+
+
 def _cmd_intel(args: argparse.Namespace) -> int:
     from intel_trends import analyze_trends
     report = analyze_trends(provider=args.provider or "")
@@ -411,6 +544,25 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--limit", type=int, default=20, help="Max entries to show")
     p.add_argument("--gate-filter", default="", help="Filter by gate name")
     p.set_defaults(func=_cmd_audit)
+
+    # session
+    p = sub.add_parser("session", help="Session authority management")
+    p.add_argument("action", choices=["create", "validate", "revoke", "refresh", "list", "cleanup"],
+                   help="Session action")
+    p.add_argument("--token", default="", help="Session token")
+    p.add_argument("--surface", default="", help="Surface filter or override")
+    p.add_argument("--ttl", type=int, default=1800, help="Session TTL in seconds")
+    p.add_argument("--reason", default="", help="Revocation reason")
+    p.add_argument("--active-only", action="store_true", help="List only active sessions")
+    p.add_argument("--max-age", type=int, default=86400, help="Max age for cleanup (seconds)")
+    p.set_defaults(func=_cmd_session)
+
+    # policy
+    p = sub.add_parser("policy", help="Authority policy engine")
+    p.add_argument("action", choices=["list", "check"], help="Policy action")
+    p.add_argument("--entitlement", default="", help="Entitlement to check")
+    p.add_argument("--surface", default="", help="Surface override")
+    p.set_defaults(func=_cmd_policy)
 
     # intel
     p = sub.add_parser("intel", help="Provider intelligence trends and analytics")

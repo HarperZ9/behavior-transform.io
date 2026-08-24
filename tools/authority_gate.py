@@ -148,6 +148,16 @@ def gate_condition(grant: AuthorityGrant | None = None) -> GateResult:
     return check_entitlement("condition", gate="condition", grant=grant)
 
 
+def gate_scan(grant: AuthorityGrant | None = None) -> GateResult:
+    """Gate: authorize pre-inference pipeline scan."""
+    return check_entitlement("scan", gate="scan", grant=grant)
+
+
+def gate_classify(grant: AuthorityGrant | None = None) -> GateResult:
+    """Gate: authorize ML classification."""
+    return check_entitlement("classify", gate="classify", grant=grant)
+
+
 def require(entitlement: str, gate: str = "generic",
             grant: AuthorityGrant | None = None) -> GateResult:
     """Check entitlement and raise if denied.

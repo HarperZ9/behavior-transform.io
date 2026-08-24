@@ -94,6 +94,23 @@ class GateSignal:
         }
 
 
+@dataclass(frozen=True)
+class AuthorityStatus:
+    """Authority check result embedded in the pipeline output."""
+    checked: bool = False
+    authorized: bool = False
+    surface: str = ""
+    reason: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "checked": self.checked,
+            "authorized": self.authorized,
+            "surface": self.surface,
+            "reason": self.reason,
+        }
+
+
 @dataclass
 class PipelineResult:
     original: str
@@ -107,6 +124,7 @@ class PipelineResult:
     substitutions: dict[str, int]
     surface: SurfaceDescriptor = field(default_factory=SurfaceDescriptor)
     gate_signal: GateSignal = field(default_factory=GateSignal)
+    authority: AuthorityStatus = field(default_factory=AuthorityStatus)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -135,6 +153,7 @@ class PipelineResult:
             "substitutions": self.substitutions,
             "surface": self.surface.to_dict(),
             "gate_signal": self.gate_signal.to_dict(),
+            "authority": self.authority.to_dict(),
         }
 
     def to_json(self, indent: int = 2) -> str:
@@ -247,12 +266,29 @@ class PreInferencePipeline:
         block_threshold: int = 1,
         include_t2_in_pressure: bool = False,
         archive_dir: Path | None = None,
+        enforce_auth: bool = False,
     ) -> None:
         self._vocab = vocab or load_vocab_backend()
         self._patterns = build_patterns(self._vocab)
         self._block_threshold = block_threshold
         self._include_t2 = include_t2_in_pressure
         self._archive_dir = archive_dir
+        self._enforce_auth = enforce_auth
+
+    def _check_authority(self) -> AuthorityStatus:
+        if not self._enforce_auth:
+            return AuthorityStatus()
+        try:
+            from authority_gate import gate_scan
+            result = gate_scan()
+            return AuthorityStatus(
+                checked=True,
+                authorized=result.allowed,
+                surface=result.surface,
+                reason=result.reason,
+            )
+        except ImportError:
+            return AuthorityStatus(checked=False)
 
     def run(
         self,
@@ -262,6 +298,25 @@ class PreInferencePipeline:
         surface: SurfaceDescriptor | None = None,
     ) -> PipelineResult:
         surface_descriptor = surface or SurfaceDescriptor()
+
+        auth = self._check_authority()
+        if auth.checked and not auth.authorized:
+            result = PipelineResult(
+                original=text,
+                modulated=text,
+                blocked=True,
+                block_reason=f"authority gate denied: {auth.reason}",
+                pressure=PressureResult(),
+                policy=PolicyResult(decision="block", block=True),
+                classification=ClassificationResult(),
+                friction_probability=0.0,
+                substitutions={},
+                surface=surface_descriptor,
+                authority=auth,
+            )
+            if block_raises:
+                raise BlockedError(result)
+            return result
 
         _, counter = apply_patterns(text, self._patterns)
         t1 = counter.get("T1", 0)
@@ -302,6 +357,7 @@ class PreInferencePipeline:
             substitutions=substitutions,
             surface=surface_descriptor,
             gate_signal=gate_signal,
+            authority=auth,
         )
 
         if self._archive_dir is not None:
