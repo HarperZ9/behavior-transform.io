@@ -197,6 +197,16 @@ def _cmd_mode(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_intel(args: argparse.Namespace) -> int:
+    from intel_trends import analyze_trends
+    report = analyze_trends(provider=args.provider or "")
+    if args.json:
+        sys.stdout.write(json.dumps(report.to_dict(), indent=2) + "\n")
+    else:
+        sys.stdout.write(report.summary() + "\n")
+    return 0
+
+
 def _cmd_infer(args: argparse.Namespace) -> int:
     from inference_loop import InferenceLoop
     from apparatus.gateway import ModelGateway
@@ -300,6 +310,11 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("density", help="Analyze semantic density of input text")
     p.add_argument("text", help="Input text to analyze")
     p.set_defaults(func=_cmd_density)
+
+    # intel
+    p = sub.add_parser("intel", help="Provider intelligence trends and analytics")
+    p.add_argument("--provider", default="", help="Filter to specific provider")
+    p.set_defaults(func=_cmd_intel)
 
     # infer
     p = sub.add_parser("infer", help="Closed-loop inference with escalating recovery")
