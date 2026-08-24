@@ -12,6 +12,8 @@ dependencies = []
 [project.scripts]
 behavior-transform = "tools.behavior_flagship:main"
 behavior-transform-io = "tools.behavior_flagship:main"
+bt-validate = "tools.validate:main"
+bt-doctor = "tools.subsystem_doctor:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["tools"]
@@ -21,6 +23,15 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+
+[tool.coverage.run]
+source = ["tools"]
+omit = ["tools/classifier/_cli.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+fail_under = 0
 
 [tool.ruff]
 line-length = 120

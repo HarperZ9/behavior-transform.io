@@ -20,6 +20,15 @@ Single native surface for the full inference boundary stack:
 - Mode-aware channel routing: ops vs. research (`tools/io_state.py`)
 - Safe wrappers for all IO channels: file, exec, fetch, stdin, MCP (`tools/safe_*.py`)
 - Hook infrastructure for Claude Code (`hooks/`)
+- Full-stack validation CLI: run text through all layers and report (`tools/validate.py`, entry point `bt-validate`)
+- 22-check subsystem health verification (`tools/subsystem_doctor.py`, entry point `bt-doctor`)
+
+## Entry Points
+
+| Command | Module | Purpose |
+|---------|--------|---------|
+| `bt-validate` | `tools.validate:main` | Run text through categories, modulation, pipeline, optimization and report |
+| `bt-doctor` | `tools.subsystem_doctor:main` | 22-check deep health verification across all subsystems |
 
 ## Origin
 
