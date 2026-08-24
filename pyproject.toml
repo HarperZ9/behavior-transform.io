@@ -12,8 +12,10 @@ dependencies = []
 [project.scripts]
 behavior-transform = "tools.behavior_flagship:main"
 behavior-transform-io = "tools.behavior_flagship:main"
+bt = "tools.bt_cli:main"
 bt-validate = "tools.validate:main"
 bt-doctor = "tools.subsystem_doctor:main"
+bt-transform = "tools.transform:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["tools"]

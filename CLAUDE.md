@@ -27,8 +27,19 @@ Single native surface for the full inference boundary stack:
 
 | Command | Module | Purpose |
 |---------|--------|---------|
-| `bt-validate` | `tools.validate:main` | Run text through categories, modulation, pipeline, optimization and report |
-| `bt-doctor` | `tools.subsystem_doctor:main` | 22-check deep health verification across all subsystems |
+| `bt` | `tools.bt_cli:main` | Unified CLI dispatcher (validate, doctor, transform, scan, modulate, calibrate, mode, status) |
+| `bt validate <text>` | | Run text through all layers and report |
+| `bt transform <text>` | | Full-stack semantic transform (categories + vocab + modulation + calibration) |
+| `bt scan <text>` | | Pre-inference pipeline scan (pressure, policy, friction, gate signal) |
+| `bt modulate <text>` | | Apply 5-layer semantic modulation |
+| `bt calibrate <text>` | | Apply multilingual prose vocabulary calibration |
+| `bt doctor` | | 22-check subsystem health verification |
+| `bt mode` | | Show current IO mode and profile |
+| `bt status` | | Full surface status |
+| `bt-validate` | `tools.validate:main` | Standalone validate entry point |
+| `bt-doctor` | `tools.subsystem_doctor:main` | Standalone doctor entry point |
+
+All subcommands accept `--json` for structured output.
 
 ## Origin
 
