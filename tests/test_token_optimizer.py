@@ -267,9 +267,9 @@ class TestHookPayloadForPrompt:
         assert "Token optimizer blocked a large prompt before model ingestion." in payload["reason"]
         assert "Saved ~" in payload["reason"]
 
-    def test_default_mode_behaves_like_block_large(self, long_fixture_text):
+    def test_default_mode_behaves_like_context(self, long_fixture_text):
         default_payload = hook_payload_for_prompt(long_fixture_text)
-        explicit_payload = hook_payload_for_prompt(long_fixture_text, mode="block-large")
+        explicit_payload = hook_payload_for_prompt(long_fixture_text, mode="context")
         assert default_payload == explicit_payload
 
     def test_context_mode_returns_context_payload_when_beneficial(self, long_fixture_text):

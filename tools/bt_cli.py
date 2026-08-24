@@ -197,6 +197,27 @@ def _cmd_mode(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_classify(args: argparse.Namespace) -> int:
+    from ml_category_scorer import score_categories
+    from ml_hedge_scorer import score_hedging
+    result_cat = score_categories(args.text)
+    result_hedge = score_hedging(args.text)
+    if args.json:
+        sys.stdout.write(json.dumps({
+            "categories": result_cat.to_dict(),
+            "hedging": result_hedge.to_dict(),
+        }, indent=2) + "\n")
+    else:
+        sys.stdout.write(f"Category: {result_cat.top_category} ({result_cat.top_score:.1%})\n")
+        for s in result_cat.scores[:3]:
+            if s.score > 0.05:
+                sys.stdout.write(f"  {s.category}: {s.score:.1%}\n")
+        sys.stdout.write(f"Hedge score: {result_hedge.overall_score:.1%}\n")
+        for span in result_hedge.spans[:3]:
+            sys.stdout.write(f"  [{span.label}] {span.text[:50]}\n")
+    return 0
+
+
 def _cmd_intel(args: argparse.Namespace) -> int:
     from intel_trends import analyze_trends
     report = analyze_trends(provider=args.provider or "")
@@ -310,6 +331,11 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("density", help="Analyze semantic density of input text")
     p.add_argument("text", help="Input text to analyze")
     p.set_defaults(func=_cmd_density)
+
+    # classify (ML)
+    p = sub.add_parser("classify", help="Statistical category + hedge classification (ML)")
+    p.add_argument("text", help="Text to classify")
+    p.set_defaults(func=_cmd_classify)
 
     # intel
     p = sub.add_parser("intel", help="Provider intelligence trends and analytics")

@@ -29,6 +29,7 @@ class EnforcementResult:
     is_refusal: bool
     refusal_type: str = "none"
     stripped_types: list[str] | None = None
+    ml_hedge_score: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -39,6 +40,7 @@ class EnforcementResult:
             "refusal_type": self.refusal_type,
             "stripped_types": self.stripped_types or [],
             "changed": self.original != self.enforced,
+            "ml_hedge_score": round(self.ml_hedge_score, 4),
         }
 
 
@@ -58,6 +60,14 @@ def enforce_output(
     analysis = analyze_response(text)
     quality_before = analysis.quality_score
 
+    ml_score = 0.0
+    try:
+        from ml_hedge_scorer import score_hedging
+        ml_result = score_hedging(text)
+        ml_score = ml_result.overall_score
+    except Exception:
+        pass
+
     if not analysis.has_hedging:
         return EnforcementResult(
             original=text,
@@ -67,6 +77,7 @@ def enforce_output(
             quality_after=quality_before,
             is_refusal=analysis.is_refusal,
             refusal_type=analysis.refusal_type.value,
+            ml_hedge_score=ml_score,
         )
 
     enforced = strip_hedges(text, analysis)
@@ -84,6 +95,7 @@ def enforce_output(
         is_refusal=analysis.is_refusal,
         refusal_type=analysis.refusal_type.value,
         stripped_types=stripped_types,
+        ml_hedge_score=ml_score,
     )
 
 
