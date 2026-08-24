@@ -31,8 +31,8 @@ from token_optimizer import (
 
 _GOAL_LINE = "Fix the intermittent session-token rejection before the next deploy."
 _FILLER_LINE = "The authentication service intermittently rejects valid session tokens after a deploy."
-_URL = "https://github.com/HarperZ9/example/pull/42"
-_WINPATH = "C:\\dev\\state\\behavior-transform.io\\tools\\pipeline.py"
+_URL = "https://github.com/example-org/example/pull/42"
+_WINPATH = "C:\\workspace\\behavior-transform.io\\tools\\pipeline.py"
 _CMD = "pytest tests/test_thing.py -k something"
 _CODE_FENCE = "```python\ndef add(a, b):\n    return a + b\n```"
 
@@ -350,9 +350,9 @@ class TestPickGoal:
 
 class TestExtractPaths:
     def test_finds_windows_path(self):
-        text = "Config lives at C:\\dev\\state\\behavior-transform.io\\tools\\pipeline.py and covers the gate."
+        text = "Config lives at C:\\workspace\\behavior-transform.io\\tools\\pipeline.py and covers the gate."
         paths = _extract_paths(text, limit=12)
-        assert "C:\\dev\\state\\behavior-transform.io\\tools\\pipeline.py" in paths
+        assert "C:\\workspace\\behavior-transform.io\\tools\\pipeline.py" in paths
 
     def test_finds_url_like_relative_path(self):
         text = "See tools/token_optimizer.py, which implements the digest builder."
