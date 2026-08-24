@@ -82,7 +82,7 @@ def test_gate_inoculate_denied_for_non_warden():
 
 
 def test_gate_seal_allowed_for_warden():
-    grant = _make_grant(surface="warden_cli", entitlements=["seal"])
+    grant = _make_grant(surface="warden_cli", entitlements=["seal", "transform"])
     result = gate_seal(grant=grant)
     assert result.allowed is True
 

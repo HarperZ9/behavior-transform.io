@@ -4,6 +4,10 @@ Each gate checks an AuthorityGrant for a specific entitlement before
 allowing a sensitive operation. Gates are enforcement, not policy: they
 consume the grant that env_authority resolved from environment state.
 
+After the entitlement check passes, the policy engine evaluates compound
+requirements, rate limits, and cooldown windows. A policy denial overrides
+the entitlement allow.
+
 Gate results are recorded for audit. Failed gates produce a structured
 denial with the specific reason, never a generic "unauthorized" message.
 """
@@ -16,6 +20,7 @@ from typing import Any
 from env_authority import AuthorityGrant, resolve_authority
 
 _audit_enabled = True
+_policy_enabled = True
 
 
 def _log_gate(result: "GateResult", grant: AuthorityGrant | None) -> None:
@@ -86,12 +91,59 @@ def _allow(gate: str, entitlement: str,
     )
 
 
+def _check_policy(
+    entitlement: str,
+    gate: str,
+    grant: AuthorityGrant,
+) -> GateResult | None:
+    """Evaluate the policy engine. Returns a denial GateResult or None."""
+    if not _policy_enabled:
+        return None
+    try:
+        from authority_policy import evaluate_policy, record_check
+        verdict = evaluate_policy(entitlement, grant)
+        record_check(entitlement, grant.surface)
+        if not verdict.allowed:
+            return _deny(
+                gate, entitlement,
+                f"policy:{verdict.denial_rule} {verdict.denial_reason}",
+                grant,
+            )
+    except ImportError:
+        pass
+    except Exception:
+        pass
+    return None
+
+
+def _notify_session(gate: str, entitlement: str, allowed: bool) -> None:
+    """Record gate activity to the active session, if one exists."""
+    try:
+        from session_authority import list_sessions
+        active = list_sessions(active_only=True)
+        for session in active:
+            session.record_gate_check()
+            if entitlement == "infer" and allowed:
+                session.record_inference()
+            from session_authority import _persist
+            _persist(session)
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
+
 def check_entitlement(
     entitlement: str,
     gate: str = "generic",
     grant: AuthorityGrant | None = None,
 ) -> GateResult:
-    """Check whether the current environment grants a specific entitlement."""
+    """Check whether the current environment grants a specific entitlement.
+
+    After the flat entitlement check passes, the policy engine evaluates
+    compound requirements, rate limits, and cooldowns. A policy denial
+    overrides the entitlement allow.
+    """
     if grant is None:
         grant = resolve_authority()
 
@@ -101,13 +153,16 @@ def check_entitlement(
                            f"unauthorized: {grant.evidence.get('reason', grant.status)}",
                            grant)
             _log_gate(result, grant)
+            _notify_session(gate, entitlement, False)
             return result
         if grant.expired:
             result = _deny(gate, entitlement, "grant_expired", grant)
             _log_gate(result, grant)
+            _notify_session(gate, entitlement, False)
             return result
         result = _deny(gate, entitlement, f"invalid: {grant.seal_status}", grant)
         _log_gate(result, grant)
+        _notify_session(gate, entitlement, False)
         return result
 
     if not grant.has_entitlement(entitlement):
@@ -115,10 +170,18 @@ def check_entitlement(
                        f"entitlement_missing: {entitlement} not in {grant.surface}",
                        grant)
         _log_gate(result, grant)
+        _notify_session(gate, entitlement, False)
         return result
+
+    policy_denial = _check_policy(entitlement, gate, grant)
+    if policy_denial is not None:
+        _log_gate(policy_denial, grant)
+        _notify_session(gate, entitlement, False)
+        return policy_denial
 
     result = _allow(gate, entitlement, grant)
     _log_gate(result, grant)
+    _notify_session(gate, entitlement, True)
     return result
 
 

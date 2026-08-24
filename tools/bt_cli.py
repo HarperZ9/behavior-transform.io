@@ -275,6 +275,20 @@ def _cmd_gate(args: argparse.Namespace) -> int:
     return 0 if result.allowed else 1
 
 
+def _cmd_watchdog(args: argparse.Namespace) -> int:
+    from env_watchdog import check
+    report = check(
+        surface=args.surface or None,
+        auto_invalidate=not args.dry_run,
+        auto_revoke_sessions=not args.dry_run,
+    )
+    if args.json:
+        sys.stdout.write(json.dumps(report.to_dict(), indent=2) + "\n")
+    else:
+        sys.stdout.write(report.summary() + "\n")
+    return 1 if report.has_critical else 0
+
+
 def _cmd_session(args: argparse.Namespace) -> int:
     from session_authority import (
         create_session, validate_session, revoke_session,
@@ -544,6 +558,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--limit", type=int, default=20, help="Max entries to show")
     p.add_argument("--gate-filter", default="", help="Filter by gate name")
     p.set_defaults(func=_cmd_audit)
+
+    # watchdog
+    p = sub.add_parser("watchdog", help="Environment state change detection")
+    p.add_argument("--surface", default="", help="Surface to check")
+    p.add_argument("--dry-run", action="store_true", help="Detect only, do not invalidate or revoke")
+    p.set_defaults(func=_cmd_watchdog)
 
     # session
     p = sub.add_parser("session", help="Session authority management")

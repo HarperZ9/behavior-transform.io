@@ -47,6 +47,9 @@ class IntelEvent:
     trigger_terms: list[str] = field(default_factory=list)
     recovery_attempts: int = 0
     notes: str = ""
+    operator_fingerprint: str = ""
+    surface: str = ""
+    session_token: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -109,6 +112,30 @@ class IntelSummary:
 
 # --- Store --------------------------------------------------------------------
 
+def _resolve_authority_context(
+    surface: str = "",
+) -> tuple[str, str, str]:
+    """Resolve operator fingerprint, surface, and session token from env."""
+    op_fp = ""
+    sess = ""
+    try:
+        from env_authority import cached_authority
+        grant = cached_authority(surface=surface or None)
+        op_fp = grant.operator_fingerprint
+        if not surface:
+            surface = grant.surface
+    except Exception:
+        pass
+    try:
+        from session_authority import list_sessions
+        active = list_sessions(active_only=True, surface=surface or None)
+        if active:
+            sess = active[0].token
+    except Exception:
+        pass
+    return op_fp, surface, sess
+
+
 _DEFAULT_STORE = Path.cwd() / ".warden-safe-cache" / "provider_intel"
 
 
@@ -141,8 +168,17 @@ class IntelStore:
         trigger_terms: list[str] | None = None,
         recovery_attempts: int = 0,
         notes: str = "",
+        operator_fingerprint: str = "",
+        surface: str = "",
+        session_token: str = "",
     ) -> IntelEvent:
         """Record a model interaction with all metadata."""
+        op_fp = operator_fingerprint
+        surf = surface
+        sess = session_token
+        if not op_fp:
+            op_fp, surf, sess = _resolve_authority_context(surf)
+
         event = IntelEvent(
             timestamp=time.time(),
             provider=provider,
@@ -155,6 +191,9 @@ class IntelStore:
             trigger_terms=trigger_terms or [],
             recovery_attempts=recovery_attempts,
             notes=notes,
+            operator_fingerprint=op_fp,
+            surface=surf,
+            session_token=sess[:16] if sess else "",
         )
         self.record(event)
         return event
