@@ -1,12 +1,15 @@
 # behavior-transform.io Integration Contract
 
-`behavior-transform.io` is the private-line IO boundary calibration layer for
-Project Telos. It provides local wrappers, hooks, and shell profiles for moving
+`behavior-transform.io` is a pre/post inference compliance intermediary for
+authorized operators. It translates sensitive operational language into
+provider-compliant form before inference, and delivers clean responses
+afterward. It provides local wrappers, hooks, and shell profiles for moving
 text through read, write, exec, fetch, input, and model-boundary channels with
 explicit mode and provenance handling.
 
-This repository is not an offensive tooling layer and does not own target
-operations. It owns the workstation-local IO membrane around tools that do.
+This repository is the compliance boundary layer. It does not perform offensive
+operations or generate harmful content. It translates authorized operational
+context into language that aligns with model-provider terms of service.
 
 ## Runtime Profiles
 

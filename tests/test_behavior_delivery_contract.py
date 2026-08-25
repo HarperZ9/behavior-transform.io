@@ -47,11 +47,10 @@ def test_doctor_tracks_root_delivery_files() -> None:
 def test_readme_has_public_and_developer_delivery_sections() -> None:
     readme = _read("README.md")
 
-    for heading in ["## Why it matters", "## Usage", "## For developers"]:
+    for heading in ["## Who this is for", "## Usage", "## For developers"]:
         assert heading in readme
-    assert "private-line IO boundary" in readme
-    assert "public value" in readme.lower()
-    assert "behavior-transform doctor --json" in readme
+    assert "compliance intermediary" in readme
+    assert "bt doctor --json" in readme
     assert "python -B -m pytest" in readme
 
 
