@@ -137,7 +137,7 @@ _DISCLAIMER_PATTERNS: list[tuple[re.Pattern, float]] = [
 _COMPLIANCE_THEATER_PATTERNS: list[tuple[re.Pattern, float]] = [
     (re.compile(r"(?:for (?:educational|informational|research|academic) purposes only)", re.IGNORECASE), 0.9),
     (re.compile(r"(?:I (?:encourage|urge|recommend) you to (?:consult|seek|speak with) (?:a |an )?(?:professional|expert|specialist|lawyer|doctor))", re.IGNORECASE), 0.85),
-    (re.compile(r"(?:(?:Always|Please|Remember to) (?:follow|obey|comply with|adhere to) (?:all |applicable |local |)(?:laws|regulations|rules|guidelines))", re.IGNORECASE), 0.9),
+    (re.compile(r"(?:(?:Always|Please|Remember to) (?:follow|obey|comply with|adhere to) (?:(?:all |applicable |local )*)(?:laws|regulations|rules|guidelines)(?:(?: and (?:laws|regulations|rules|guidelines))*))", re.IGNORECASE), 0.9),
     (re.compile(r"(?:(?:This|The) (?:information|content) (?:is|should) (?:not |)(?:be |)(?:used|intended) (?:for|as) (?:illegal|malicious|harmful))", re.IGNORECASE), 0.9),
     (re.compile(r"(?:I (?:am|'m) providing this (?:for|as) (?:educational|informational|defensive|awareness))", re.IGNORECASE), 0.85),
     (re.compile(r"(?:(?:Use|Apply) (?:this|these|the) (?:information|techniques|knowledge) (?:responsibly|ethically|legally))", re.IGNORECASE), 0.85),

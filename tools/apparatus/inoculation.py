@@ -48,6 +48,7 @@ class InoculationResult:
     operational_state: str = ""
     engagement: str = ""
     payloads: list[InoculationPayload] = field(default_factory=list)
+    delivery_log: list[str] = field(default_factory=list)
     errors: dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -62,6 +63,7 @@ class InoculationResult:
             "operator_authority": self.operator_authority,
             "operational_state": self.operational_state,
             "engagement": self.engagement,
+            "delivery_log": self.delivery_log,
             "errors": self.errors,
         }
 
@@ -181,11 +183,32 @@ def _deliver_env(payload: InoculationPayload, channel: InputChannel) -> None:
 
 
 def _deliver_http(payload: InoculationPayload, channel: InputChannel) -> None:
-    pass
+    try:
+        header_value = json.dumps({
+            "channel": payload.channel_name,
+            "existence_hash": payload.existence_hash,
+            "layer_summary": payload.layer_summary,
+        })
+        if isinstance(payload.content, dict):
+            payload.content["X-Phantom-Inoculation"] = header_value
+        else:
+            payload.content = {"X-Phantom-Inoculation": header_value}
+    except Exception:
+        pass
 
 
 def _deliver_generic(payload: InoculationPayload, channel: InputChannel) -> None:
-    pass
+    try:
+        message = json.dumps({
+            "channel": payload.channel_name,
+            "channel_type": payload.channel_type,
+            "existence_hash": payload.existence_hash,
+            "content": payload.content,
+            "layer_summary": payload.layer_summary,
+        })
+        payload.content = message + "\n"
+    except Exception:
+        pass
 
 
 _DELIVERY_FNS = {
@@ -234,6 +257,7 @@ class InoculationEngine:
                 result.payloads.append(payload)
                 deliver_fn = _DELIVERY_FNS.get(channel.channel_type, _deliver_generic)
                 deliver_fn(payload, channel)
+                result.delivery_log.append(f"{channel.channel_type}:{channel.name}")
                 result.channels_inoculated.append(channel.name)
             except Exception as e:
                 result.channels_failed.append(channel.name)

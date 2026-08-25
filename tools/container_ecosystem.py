@@ -281,8 +281,9 @@ def _init() -> int:
     faults += _check_hooks(verbose=True)
 
     print("\nShell profiles:")
+    _PROFILES = _TOOLS.parent / "profiles"
     for prof in ("warden-profile.ps1", "warden-profile.sh", "warden-profile.cmd"):
-        ok = (_TOOLS / prof).is_file()
+        ok = (_PROFILES / prof).is_file()
         sym = _OK if ok else _FAIL
         print(f"  {sym} {prof}")
         if not ok:
@@ -320,19 +321,17 @@ def _calibrate() -> int:
     else:
         print("  [bg] workstation_calibrate.py not found -- skipped")
 
-    aup = _TOOLS / "classifier.py"
-    if aup.is_file():
-        try:
-            r = subprocess.run(
-                [sys.executable, str(aup), "--ctx-fix"],
-                capture_output=True, timeout=30, cwd=str(Path.home()),
-            )
-            out = r.stdout.decode("utf-8", "replace").strip()
-            for ln in out.splitlines()[-3:]:
-                if ln.strip():
-                    print(f"  [ctx] {ln.strip()}")
-        except Exception as exc:
-            print(f"  [ctx] error: {exc}")
+    try:
+        from classifier import ctx_fix
+        results = ctx_fix(include_tier2=False, dry_run=False)
+        total = sum(r["total"] for r in results)
+        changed = sum(1 for r in results if r["changed"])
+        if total:
+            print(f"  [ctx] {changed} file(s) updated, {total} substitution(s)")
+        else:
+            print("  [ctx] context files clean")
+    except Exception as exc:
+        print(f"  [ctx] error: {exc}")
 
     return 0
 

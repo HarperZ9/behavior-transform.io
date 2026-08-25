@@ -137,13 +137,34 @@ def check_entitlement(
     entitlement: str,
     gate: str = "generic",
     grant: AuthorityGrant | None = None,
+    session_token: str | None = None,
 ) -> GateResult:
     """Check whether the current environment grants a specific entitlement.
+
+    When session_token is provided, the session is validated first. An
+    invalid, expired, or revoked session produces a denial before the
+    entitlement check runs. Omitting session_token preserves the original
+    behavior (no session validation).
 
     After the flat entitlement check passes, the policy engine evaluates
     compound requirements, rate limits, and cooldowns. A policy denial
     overrides the entitlement allow.
     """
+    if session_token is not None:
+        try:
+            from session_authority import validate_session
+            session = validate_session(session_token)
+            if session is None or not session.active:
+                result = _deny(gate, entitlement, "session_invalid", grant)
+                _log_gate(result, grant)
+                _notify_session(gate, entitlement, False)
+                return result
+        except ImportError:
+            result = _deny(gate, entitlement, "session_invalid", grant)
+            _log_gate(result, grant)
+            _notify_session(gate, entitlement, False)
+            return result
+
     if grant is None:
         grant = resolve_authority()
 

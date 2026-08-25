@@ -250,8 +250,9 @@ class InferenceLoop:
                 trigger_terms=triggers,
                 recovery_attempts=attempt.level,
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            import sys
+            print(f"inference_loop: recording failed: {exc}", file=sys.stderr)
 
 
 # --- CLI entry point ----------------------------------------------------------

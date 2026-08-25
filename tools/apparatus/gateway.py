@@ -14,6 +14,7 @@ import ssl
 import urllib.request
 from dataclasses import dataclass
 from typing import Any, TYPE_CHECKING
+from uuid import uuid4
 
 if TYPE_CHECKING:
     from inference_loop import LoopResult
@@ -93,15 +94,16 @@ class ModelGateway:
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Send a chat request through the apparatus pipeline."""
+        request_id = uuid4().hex[:12]
         narrative = _active_narrative()
         effective_system = (
             f"{narrative}\n\n{system}" if system else narrative
         ) or system
 
-        calibrated_messages = _calibrate(messages)
+        calibrated_messages = _calibrate(messages, request_id=request_id)
         payload = self._build_payload(model, calibrated_messages, effective_system, **kwargs)
         raw_response = self._send(payload)
-        return _demodulate_response(raw_response)
+        return _demodulate_response(raw_response, request_id=request_id)
 
     def _build_payload(
         self,
@@ -179,7 +181,7 @@ def _active_narrative() -> str:
         return ""
 
 
-def _calibrate(messages: list[dict]) -> list[dict]:
+def _calibrate(messages: list[dict], *, request_id: str = "") -> list[dict]:
     try:
         from ..vocab_backend import apply_patterns, build_patterns, load_vocab_backend
         patterns = build_patterns(load_vocab_backend())
@@ -191,24 +193,41 @@ def _calibrate(messages: list[dict]) -> list[dict]:
                 out.append({**msg, "content": calibrated})
             else:
                 out.append(msg)
+        if request_id:
+            _register_calibration(messages, request_id)
         return out
     except Exception:
         return messages
 
 
-def _demodulate_response(data: dict) -> dict:
+def _register_calibration(messages: list[dict], request_id: str) -> None:
+    """Register calibration context so the response demodulator can reverse it."""
     try:
-        from ..vocab_backend import apply_patterns, build_patterns, load_vocab_backend
-        patterns = build_patterns(load_vocab_backend())
+        from ..response_demodulator import register_modulation_for_request
+        from ..categories import classify
+        for msg in reversed(messages):
+            if msg.get("role") == "user":
+                content = msg.get("content", "")
+                if isinstance(content, str) and content.strip():
+                    result = classify(content)
+                    register_modulation_for_request(request_id, result)
+                    return
+    except Exception:
+        pass
+
+
+def _demodulate_response(data: dict, *, request_id: str = "") -> dict:
+    try:
+        from ..response_demodulator import demodulate_response as _demod
         for block in data.get("content", []):
             if isinstance(block, dict) and block.get("type") == "text":
-                text, _ = apply_patterns(block.get("text", ""), patterns)
-                block["text"] = text
+                result = _demod(block.get("text", ""), request_id)
+                block["text"] = result.demodulated_response
         for choice in data.get("choices", []):
             msg = choice.get("message", {})
             if isinstance(msg.get("content"), str):
-                calibrated, _ = apply_patterns(msg["content"], patterns)
-                msg["content"] = calibrated
+                result = _demod(msg["content"], request_id)
+                msg["content"] = result.demodulated_response
     except Exception:
         pass
     return data
