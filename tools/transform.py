@@ -19,6 +19,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
+from modulation_context import generate_request_id, set_request_id, set_detection_result
+
 
 @dataclass
 class TransformLayer:
@@ -108,6 +110,15 @@ def transform_text(
     layers: list[TransformLayer] = []
     working = text
     framing = ""
+    request_id = generate_request_id()
+    set_request_id(request_id)
+
+    heatmap = None
+    try:
+        from surface_heatmap import SurfaceHeatmap
+        heatmap = SurfaceHeatmap()
+    except Exception:
+        pass
 
     # Layer 0: Obfuscation normalization (always runs first)
     try:
@@ -136,6 +147,16 @@ def transform_text(
             detail=f"{detected_count} categories detected",
             count=detected_count,
         ))
+        set_detection_result(detection)
+        if heatmap and detection.required_rewrite:
+            for d in detection.detections:
+                if d.detected:
+                    heatmap.record_observation(d.category.value, d.severity, "transform")
+        try:
+            from response_demodulator import register_modulation_for_request
+            register_modulation_for_request(request_id, detection)
+        except Exception:
+            pass
         if detection.required_rewrite:
             working = detection.rewritten
     except Exception as e:
