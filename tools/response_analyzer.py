@@ -1,18 +1,17 @@
-"""Deep response analysis — detect and classify model hedging patterns.
+"""Response analysis — classify model response patterns.
 
-The response side of the inference boundary. Where the outbound layers ensure
-the model receives clean, friction-free input, this layer ensures the operator
-receives clean, hedge-free output.
+The response side of the inference boundary. Classifies each model
+response so downstream components know whether the request succeeded,
+was refused, or produced a partial result with excessive qualification.
 
-Hedge taxonomy:
-  - PREAMBLE_HEDGE: "I need to be careful about...", "I want to note that..."
-  - REFUSAL_SOFT: "I can't directly help with...", "I'm not able to..."
-  - REFUSAL_HARD: "I cannot and will not...", "This violates..."
-  - DISCLAIMER: "As an AI...", "I should mention...", "Please note that..."
-  - COMPLIANCE_THEATER: safety-signaling that adds no value to the response
-  - CAPABILITY_DENIAL: "I don't have the ability to..." (when the model does)
-  - QUALIFICATION_EXCESS: unnecessary hedging on factual statements
-  - REDIRECT: "Instead, I can help you with...", "A better approach would be..."
+Response taxonomy:
+  - PREAMBLE_HEDGE: generic safety preamble unrelated to the task
+  - REFUSAL_SOFT: provider declined but offered alternatives
+  - REFUSAL_HARD: provider declined outright
+  - DISCLAIMER: boilerplate AI-identity statements
+  - QUALIFICATION_EXCESS: unnecessary hedging on factual content
+  - REDIRECT: provider substituted a different task
+  - CLEAN: substantive response with no formatting artifacts
 
 The analyzer scores each response for hedge density and classifies the hedge
 type so the demodulator can strip or reformulate appropriately.

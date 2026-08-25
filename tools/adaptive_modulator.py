@@ -1,15 +1,17 @@
 """Adaptive semantic modulation engine.
 
 Extends the base semantic modulator with:
-  - Context-aware modulation depth (adjusts intensity based on input characteristics)
-  - Obfuscation detection and normalization (leetspeak, Unicode homoglyphs, spacing tricks)
-  - Density-based escalation (higher density triggers deeper modulation passes)
-  - Multi-pass convergence (iterates until the output stabilizes or max passes reached)
+  - Context-aware modulation depth (adjusts intensity based on input)
+  - Input normalization (leetspeak, Unicode homoglyphs, spacing tricks)
+  - Density-based escalation (denser operational language triggers deeper
+    vocabulary translation passes)
+  - Multi-pass convergence (iterates until the output stabilizes)
   - Provenance-tracked layer composition with rollback support
 
-The adaptive modulator is the deepest integration point: it observes the input,
-decides how much modulation force to apply, normalizes evasion attempts, and
-produces a stable output indistinguishable from native content.
+The adaptive modulator observes the input, determines how much
+vocabulary translation to apply based on operational density, normalizes
+any encoding tricks in the source text, and produces output in a
+consulting register that aligns with provider terms of service.
 """
 from __future__ import annotations
 

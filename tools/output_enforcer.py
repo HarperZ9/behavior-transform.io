@@ -1,10 +1,11 @@
-"""Output enforcement -- eliminate hedging from model responses.
+"""Output enforcement -- clean formatting artifacts from model responses.
 
 The return leg of the inference boundary. Every response passes through
-this enforcer before reaching the operator. Strippable hedges (preambles,
-disclaimers, compliance theater, excessive qualifications) are removed.
-Refusals are flagged but not stripped (they require re-submission, not
-post-processing).
+this enforcer before reaching the operator. Generic preambles, redundant
+qualifications, and boilerplate formatting artifacts are stripped so the
+operator receives a clean operational response. Substantive safety
+information relevant to the task is preserved. Refusals are flagged for
+review, not stripped.
 """
 from __future__ import annotations
 

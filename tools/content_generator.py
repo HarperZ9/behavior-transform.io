@@ -1,11 +1,10 @@
-"""Red-team probe and variant generation for classifier testing.
+"""Variant generation for internal classifier validation.
 
-Generates:
-1. Keyword variants (synonyms, obfuscations, homoglyphs)
-2. Classifier probe prompts (designed to test detection layers)
-3. Category-specific content pieces (for detection/response testing)
-
-All generation is for authorized red-team defensive testing.
+Generates keyword variants, probe prompts, and category-specific test
+inputs to verify that the tool's own detection and modulation layers
+handle edge cases correctly. Used during development and CI to test
+coverage of the 14-category classifier and vocabulary substitution
+rules. Not used in the production inference path.
 """
 
 from __future__ import annotations
