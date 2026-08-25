@@ -266,7 +266,9 @@ def _cmd_audit(args: argparse.Namespace) -> int:
 
 def _cmd_gate(args: argparse.Namespace) -> int:
     from authority_gate import check_entitlement
-    result = check_entitlement(args.entitlement, gate=args.gate or "cli")
+    token = args.session_token or None
+    result = check_entitlement(args.entitlement, gate=args.gate or "cli",
+                               session_token=token)
     if args.json:
         sys.stdout.write(json.dumps(result.to_dict(), indent=2) + "\n")
     else:
@@ -464,13 +466,14 @@ def _cmd_infer(args: argparse.Namespace) -> int:
 
 
 def _cmd_status(args: argparse.Namespace) -> int:
-    from behavior_flagship import status as flagship_status
-    result = flagship_status()
+    from behavior_flagship import status_envelope
+    result = status_envelope()
     if args.json:
         sys.stdout.write(json.dumps(result, indent=2) + "\n")
     else:
-        for key, value in result.items():
-            sys.stdout.write(f"  {key}: {value}\n")
+        sys.stdout.write(f"  verdict: {result.get('verdict', 'unknown')}\n")
+        for output in result.get("outputs", []):
+            sys.stdout.write(f"  {output.get('kind', '')}: root={output.get('root_sha256_prefix', 'n/a')}\n")
     return 0
 
 
@@ -550,6 +553,7 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("gate", help="Check a specific entitlement gate")
     p.add_argument("entitlement", help="Entitlement to check (transform, infer, inoculate, etc.)")
     p.add_argument("--gate", default="", help="Gate name for audit trail")
+    p.add_argument("--session-token", default="", help="Session token to validate before checking the gate")
     p.set_defaults(func=_cmd_gate)
 
     # audit

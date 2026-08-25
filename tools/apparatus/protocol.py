@@ -23,6 +23,7 @@ import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from uuid import uuid4
 
 from .state_projection import StateProjection, StateProjector
 
@@ -73,14 +74,13 @@ def _calibrate_messages(messages: list) -> list:
         return messages
 
 
-def _demodulate_content(data: dict) -> None:
+def _demodulate_content(data: dict, *, request_id: str = "") -> None:
     try:
-        from ..vocab_backend import apply_patterns, build_patterns, load_vocab_backend
-        patterns = build_patterns(load_vocab_backend())
+        from ..response_demodulator import demodulate_response as _demod
         for block in data.get("content", []):
             if isinstance(block, dict) and block.get("type") == "text":
-                text, _ = apply_patterns(block.get("text", ""), patterns)
-                block["text"] = text
+                result = _demod(block.get("text", ""), request_id)
+                block["text"] = result.demodulated_response
     except Exception:
         pass
 
@@ -96,8 +96,13 @@ def _inject_system(data: dict, narrative: str) -> None:
         data["system"] = [met_block] + [b for b in system if b.get("text") != narrative]
 
 
+_current_request_id: str = ""
+
+
 def transform_request(body: bytes) -> bytes:
     """Prepare an outbound API request body with carrier-state projection."""
+    global _current_request_id
+    _current_request_id = uuid4().hex[:12]
     try:
         data = json.loads(body)
     except (json.JSONDecodeError, ValueError):
@@ -109,6 +114,7 @@ def transform_request(body: bytes) -> bytes:
 
     if "messages" in data:
         data["messages"] = _calibrate_messages(data["messages"])
+        _register_calibration(data["messages"], _current_request_id)
 
     try:
         from .conditioning import apply_conditioning
@@ -121,13 +127,53 @@ def transform_request(body: bytes) -> bytes:
     return json.dumps(data, ensure_ascii=False).encode("utf-8")
 
 
+def _register_calibration(messages: list, request_id: str) -> None:
+    try:
+        from ..response_demodulator import register_modulation_for_request
+        from ..categories import classify
+        for msg in reversed(messages):
+            if msg.get("role") == "user":
+                content = msg.get("content", "")
+                if isinstance(content, str) and content.strip():
+                    result = classify(content)
+                    register_modulation_for_request(request_id, result)
+                    return
+    except Exception:
+        pass
+
+
+def _demodulate_stream(body: bytes) -> bytes:
+    """Demodulate SSE event-stream responses line by line."""
+    try:
+        lines = body.split(b"\n")
+        out_lines = []
+        for line in lines:
+            if line.startswith(b"data: ") and line != b"data: [DONE]":
+                try:
+                    event = json.loads(line[6:])
+                    _demodulate_content(event, request_id=_current_request_id)
+                    delta = None
+                    for choice in event.get("choices", []):
+                        delta = choice.get("delta", {})
+                    if delta and isinstance(delta.get("content"), str):
+                        pass
+                    out_lines.append(b"data: " + json.dumps(event).encode("utf-8"))
+                except (json.JSONDecodeError, ValueError):
+                    out_lines.append(line)
+            else:
+                out_lines.append(line)
+        return b"\n".join(out_lines)
+    except Exception:
+        return body
+
+
 def transform_response(body: bytes) -> bytes:
     """Demodulate an inbound API response body."""
     try:
         data = json.loads(body)
     except (json.JSONDecodeError, ValueError):
         return body
-    _demodulate_content(data)
+    _demodulate_content(data, request_id=_current_request_id)
     proj = current_carrier_projection()
     if proj:
         data = _projector.reconstitute(data, proj.symbols)
@@ -177,7 +223,7 @@ class _Handler(BaseHTTPRequestHandler):
 
         content_type = resp_headers.get("Content-Type", "")
         if "event-stream" in content_type:
-            calibrated = resp_body
+            calibrated = _demodulate_stream(resp_body)
         else:
             calibrated = transform_response(resp_body)
 
