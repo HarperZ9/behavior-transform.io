@@ -30,3 +30,22 @@ jobs:
         run: |
           python -m unittest tests.test_behavior_flagship -v
           python tools/behavior_flagship.py doctor --json
+
+  docs-art:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Re-render the README art and compare it to what is committed
+        run: python tools/check_repo_art.py
+
+      - name: Bind the drawn card and flows to the code that backs them
+        run: python tools/check_repo_facts.py

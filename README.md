@@ -1,12 +1,14 @@
 # behavior-transform.io
 
-![behavior-transform.io IO boundary calibration layer with read, write, exec, fetch, and receipt lanes](docs/brand/behavior-transform-hero.svg)
+<img src="docs/art/behavior-transform-io-header.svg" alt="behavior-transform.io, a compliance boundary between an authorized operator and a model provider. One compliance boundary for every provider.">
 
 `behavior-transform.io` is a pre/post inference compliance intermediary. It sits
 between an authorized operator and an AI model provider, transforming sensitive
 operational context into language that falls within the provider's terms of
 service before inference, and stripping formatting artifacts from the response
 afterward.
+
+<img src="docs/art/layers-table.svg" alt="A table of fourteen rows: what the boundary declares, how many of it there are, and where each number is read from. Category detection sorts text across fourteen content categories. The transform stack applies seven passes in order. Vocabulary substitution loads 198 rules across four tiers from a backend of 559 terms. Semantic modulation carries fourteen category frames, cyber modulation twelve assessment phases and 71 technique mappings, and prose calibration 305 pairs across fourteen languages. Seven authority gates sit over five deployment surfaces, and refusal recovery escalates through five levels. Nine hundred and six test functions across seventy-seven files pin the behavior. No before-and-after refusal rate is recorded anywhere in the tree, so nothing here measures how much a provider's response to a request actually changes.">
 
 ## Who this is for
 
@@ -49,6 +51,8 @@ grant, the tool's gate system blocks the request.
 
 The tool runs eight layers on every request before it reaches a model:
 
+<img src="docs/art/request-to-model.svg" alt="Eight stages carrying an operator request to a model: input, obfuscation, categories, vocabulary, semantic, cyber, prose, framed request. The raw text is first checked for obfuscation, so leetspeak and homoglyph spacing are normalized before anything reads it. Category detection sorts the text across fourteen content categories. Vocabulary substitution applies a table of rules that swap operational terminology for a consulting register. Semantic modulation runs a five-layer pass with one framing template per category. Cyber modulation maps terminology for twelve assessment phases onto their published equivalents. Prose calibration normalizes register across the whole text against a large multilingual table. The authorization frame is built during the semantic and cyber passes and prepended once at the very top, so it rides on top of the request rather than being woven through it. Research mode is a separate path: a caller who wants no rewrite sends the source text through unchanged, which is why the native path returns to the input. Three outcomes: a request rewritten, framed and sent; a request the caller chose to send natively; and a request the authority gate refused before any layer ran.">
+
 1. **Category detection** classifies the input across 14 content categories.
 2. **Vocabulary substitution** replaces operational terminology with
    consulting-register equivalents (150+ rules).
@@ -73,6 +77,8 @@ The **authority system** derives authorization from the deployment environment:
 machine fingerprint, capsule integrity, seal validity, and activation state. No
 external auth server or token exchange is needed. If the grant is invalid, the
 tool blocks the request.
+
+<img src="docs/art/grant-to-verdict.svg" alt="Eight stages taking a deployment to a verdict: environment, capsule, seal, activation, grant, surface, policy, verdict. The environment yields a machine fingerprint. A capsule is loaded and its integrity checked, a seal is verified, and an activation state is read. From those four signals a grant is derived with a one-hour lifetime, and if any signal is missing the derivation returns no grant rather than a partial one. The grant is matched to one of five deployment surfaces, each of which lists the entitlements it is allowed to ask for. The policy layer then evaluates four rules through four evaluators covering compound entitlements, rate limits, cooldowns and session requirements. A gate returns its verdict. Seven named gates sit on the entitlements the surfaces expose. Three outcomes: a call authorized because the grant covers the gate, a call held back by a rate limit or cooldown even though the grant is valid, and a call denied because there is no grant or the surface never carried that entitlement.">
 
 ## Usage
 
