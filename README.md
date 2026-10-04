@@ -1,4 +1,19 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HarperZ9/behavior-transform.io/main/docs/art/hero-dark.svg">
+  <img src="https://raw.githubusercontent.com/HarperZ9/behavior-transform.io/main/docs/art/hero-light.svg" alt="behavior-transform.io: One compliance boundary between authorized operators and AI providers. Bundles of fine lines carry the work through 5 stations, categorize, substitute, frame, transform and gate, along a sweeping path into a bright core." width="100%">
+</picture>
+
 # behavior-transform.io
+
+One compliance boundary between authorized operators and AI providers.
+
+```
+python -m pip install -e .
+```
+
+[![CI](https://github.com/HarperZ9/behavior-transform.io/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/behavior-transform.io/actions/workflows/ci.yml)
+[![license](https://img.shields.io/badge/license-Proprietary-e6e1d6?style=flat-square&labelColor=1a1712)](https://github.com/HarperZ9/behavior-transform.io/blob/main/LICENSE)
+![python 3.10+](https://img.shields.io/badge/python-3.10%2B-e6e1d6?style=flat-square&labelColor=1a1712)
 
 <img src="docs/art/behavior-transform-io-header.svg" alt="behavior-transform.io, a compliance boundary between an authorized operator and a model provider. One compliance boundary for every provider.">
 
