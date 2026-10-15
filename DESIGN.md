@@ -16,9 +16,11 @@ verification node.
 
 ## Typography
 
-- Display: heavy system sans or rendered licensed Kilon for exported artwork.
-- Body: system sans for GitHub readability.
-- Utility: `ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`.
+Two faces only: Hanken Grotesk and Conso. Hierarchy comes from weight and size.
+
+- Display and body: Hanken Grotesk, set heavy for display. GitHub renders README text in its own system sans.
+- Data, labels and code: Conso, falling back to `ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`.
+- Kilon, the earlier display face, was retired on 2026-10-04 because readers found it hard to read. Artwork exported before that date may still carry it.
 
 ## Asset Roles
 
