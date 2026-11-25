@@ -1,3 +1,5 @@
+> **Archived (2026-11-25):** This repository has moved to [https://github.com/HarperZ9/flywheel/tree/main/packages/behavior-transform.io](https://github.com/HarperZ9/flywheel/tree/main/packages/behavior-transform.io). Active development and tests run there.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HarperZ9/behavior-transform.io/main/docs/art/hero-dark.svg">
   <img src="https://raw.githubusercontent.com/HarperZ9/behavior-transform.io/main/docs/art/hero-light.svg" alt="behavior-transform.io: One compliance boundary between authorized operators and AI providers. Bundles of fine lines carry the work through 5 stations, categorize, substitute, frame, transform and gate, along a sweeping path into a bright core." width="100%">
